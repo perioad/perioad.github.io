@@ -6,10 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "out": "mv ./out/* ./",
-    "next-rm": "rm -rf ./_next",
-    "ci": "npm run next-rm && npm run build && npm run out && git add . && git commit -m"
+    "lint": "next lint"
   },
   "dependencies": {
     "react": "^18",
