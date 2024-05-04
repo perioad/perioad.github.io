@@ -5,7 +5,7 @@ import './globals.css';
 const font = Racing_Sans_One({ weight: '400', subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'erioad',
+  title: 'perioad',
   description: 'Personal site of perioad',
 };
 

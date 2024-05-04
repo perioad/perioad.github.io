@@ -1,3 +1,12 @@
+import Avatar from '../avatar/Avatar';
+import { Section } from '../section/Section';
+
 export const General = () => {
-  return <section></section>;
+  return (
+    <Section number={1} overall={1}>
+      <div>
+        <Avatar />
+      </div>
+    </Section>
+  );
 };
