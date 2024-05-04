@@ -1,7 +1,10 @@
+import Counter from '../components/experimental/Counter';
+import { Section } from '../components/section/Section';
+
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <h1>Hello world 3</h1>
+    <main className="h-screen overflow-y-scroll snap-y snap-mandatory">
+      <Counter />
     </main>
   );
 }
