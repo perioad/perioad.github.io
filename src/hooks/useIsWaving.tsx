@@ -1,56 +1,67 @@
 import { useEffect, useRef, useState } from 'react';
 import * as handTrack from 'handtrackjs';
 
-export const useIsWaving = (videoRef: HTMLVideoElement | undefined) => {
+export const useIsWaving = (
+  videoRef: HTMLVideoElement | null,
+  frequency: number,
+  width = 450,
+  height = 380
+): [boolean, boolean | null, boolean | null] => {
   const [isWaving, setIsWaving] = useState(false);
-  const [isAllowed, setIsAllowed] = useState(false);
+  const [isAccessGranted, setIsAccessGranted] = useState<boolean | null>(null);
+  const [isReady, setIsReady] = useState<boolean | null>(null);
   const intervalRef = useRef<NodeJS.Timeout>();
   const modelRef = useRef<handTrack.ObjectDetection | null>(null);
 
   useEffect(() => {
-    console.log('videoRef: ', videoRef);
-
-    if (!videoRef) {
+    if (!videoRef || modelRef.current) {
       return;
     }
 
     async function trackHand() {
       const params = {
-        flipHorizontal: true,
         maxNumBoxes: 2,
         scoreThreshold: 0.6,
       };
 
       try {
-        console.log(1);
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-        });
-        console.log(2);
-        videoRef!.srcObject = stream;
-      } catch {
-        setIsAllowed(false);
-      }
-      console.log(3);
-      modelRef.current = await handTrack.load(params);
-      intervalRef.current = setInterval(async () => {
-        console.log('videoRef2222: ', videoRef);
-        const predictions = await modelRef.current?.detect(videoRef!);
-        console.log('predictions: ', predictions);
-        const hand = predictions?.find((prediction) => prediction.class === 1);
-        console.log('hand: ', hand);
+        if (!videoRef?.srcObject) {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+          });
 
+          videoRef!.width = width;
+          videoRef!.height = height;
+          videoRef!.srcObject = stream;
+
+          setIsAccessGranted(true);
+        }
+      } catch {
+        setIsAccessGranted(false);
+
+        return;
+      }
+
+      modelRef.current = await handTrack.load(params);
+      setIsReady(true);
+
+      intervalRef.current = setInterval(async () => {
+        const predictions = await modelRef.current?.detect(videoRef!);
+        const hand = predictions?.find((prediction) => prediction.class === 1);
+
+        console.log('waving', !!hand);
         setIsWaving(!!hand);
-      }, 1000);
+      }, frequency);
     }
 
     trackHand();
 
     return () => {
+      console.log('cleanup');
       modelRef.current?.dispose();
       clearInterval(intervalRef.current);
     };
-  }, [videoRef]);
+  }, [videoRef, frequency, width, height]);
 
-  return [isWaving, isAllowed];
+  return [isWaving, isAccessGranted, isReady];
 };

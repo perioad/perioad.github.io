@@ -1,35 +1,56 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import { useIsWaving } from '../../hooks/useIsWaving';
+import { use, useEffect, useRef, useState } from 'react';
+import { AvatarVideo } from '../avatar-video/AvatarVideo';
+// import { useIsWaving } from '../../hooks/useIsWaving';
 
-const Avatar = () => {
-  const [videoElement, setVideoElement] = useState<HTMLVideoElement>();
-  const [isWaving, isAllowed] = useIsWaving(videoElement);
+export const Avatar = () => {
+  const [isInteractive, setIsInteractive] = useState(false);
+  const [isWavingLoading, setIsWavingLoading] = useState(false);
+  const [WavingComponent, setWavingComponent] = useState<any | null>(null);
 
-  const src = `videos/${isWaving ? 'happy' : 'serious'}.mp4`;
+  function handleInteract() {
+    setIsInteractive(true);
+  }
+
+  useEffect(() => {
+    async function getWavingComponent() {
+      setIsWavingLoading(true);
+
+      const { Waving } = await import('../waving/Waving');
+
+      setIsWavingLoading(false);
+
+      setWavingComponent(() => Waving);
+    }
+
+    if (isInteractive) {
+      getWavingComponent();
+    }
+  }, [isInteractive]);
 
   return (
     <div>
-      <video
-        src={src}
-        autoPlay
-        muted
-        loop
-        className="object-cover rounded-full w-96 h-96"
-      />
+      {!WavingComponent && (
+        <div className="w-96 h-96 relative">
+          <AvatarVideo
+            type="still"
+            isVisible={true}
+            isLoading={isWavingLoading}
+          />
+        </div>
+      )}
 
-      <video
-        ref={(node) => {
-          node && setVideoElement(node);
-        }}
-        autoPlay
-        playsInline
-      />
+      {WavingComponent && <WavingComponent />}
 
-      <button className="px-2 text-pink-700 border py1">Interact</button>
+      {!isInteractive && (
+        <button
+          className="px-2 text-pink-700 border py1"
+          onClick={handleInteract}
+        >
+          Interact
+        </button>
+      )}
     </div>
   );
 };
-
-export default Avatar;

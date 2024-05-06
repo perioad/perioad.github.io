@@ -16,6 +16,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link
+          rel="preload"
+          href="https://cdn.jsdelivr.net/npm/handtrackjs@latest/models/webmodel/ssd320fpnlite/int8/model.json"
+          as="fetch"
+          fetchPriority="low"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="preload"
+          href="https://cdn.jsdelivr.net/npm/handtrackjs@latest/models/webmodel/ssd320fpnlite/int8/group1-shard1of1.bin"
+          as="fetch"
+          fetchPriority="low"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body className={font.className}>{children}</body>
     </html>
   );
