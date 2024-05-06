@@ -34,10 +34,14 @@ export const Waving = () => {
         />
       </div>
 
-      {isInteractionReady && <p>Wave to me and I&apos;ll wave back :)</p>}
+      {isInteractionReady && (
+        <p className="text-2xl mt-5 text-center">
+          Wave to me and I&apos;ll wave back :)
+        </p>
+      )}
 
       {isCameraDenied && (
-        <p>
+        <p className="text-2xl mt-5 text-center">
           Either there is no camera on your device or permission wasn&apos;t
           granted :c
         </p>

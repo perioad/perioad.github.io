@@ -32,7 +32,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
       </head>
-      <body className={font.className}>{children}</body>
+      <body className={`${font.className} text-zinc-200`}>{children}</body>
     </html>
   );
 }

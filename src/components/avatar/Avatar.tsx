@@ -1,8 +1,7 @@
 'use client';
 
-import { use, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AvatarVideo } from '../avatar-video/AvatarVideo';
-// import { useIsWaving } from '../../hooks/useIsWaving';
 
 export const Avatar = () => {
   const [isInteractive, setIsInteractive] = useState(false);
@@ -17,11 +16,13 @@ export const Avatar = () => {
     async function getWavingComponent() {
       setIsWavingLoading(true);
 
-      const { Waving } = await import('../waving/Waving');
+      try {
+        const { Waving } = await import('../waving/Waving');
 
-      setIsWavingLoading(false);
-
-      setWavingComponent(() => Waving);
+        setWavingComponent(() => Waving);
+      } catch {
+        setIsWavingLoading(false);
+      }
     }
 
     if (isInteractive) {
@@ -45,7 +46,7 @@ export const Avatar = () => {
 
       {!isInteractive && (
         <button
-          className="px-2 text-pink-700 border py1"
+          className=" px-5 text-pink-700 border py-1 text-2xl mt-5 mx-auto block"
           onClick={handleInteract}
         >
           Interact
