@@ -31,9 +31,9 @@ export const Avatar = () => {
   }, [isInteractive]);
 
   return (
-    <div>
+    <div className="relative">
       {!WavingComponent && (
-        <div className="w-96 h-96 relative">
+        <div className="relative h-96 w-96">
           <AvatarVideo
             type="still"
             isVisible={true}
@@ -46,7 +46,7 @@ export const Avatar = () => {
 
       {!isInteractive && (
         <button
-          className=" px-5 text-pink-700 border py-1 text-2xl mt-5 mx-auto block"
+          className=" absolute bottom-5 left-1/2 block -translate-x-1/2 transform border border-none bg-zinc-900 px-5 py-1 text-2xl text-pink-700 transition-all hover:rotate-2 hover:text-pink-600 active:scale-95"
           onClick={handleInteract}
         >
           Interact

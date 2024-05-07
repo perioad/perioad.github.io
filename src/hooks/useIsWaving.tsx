@@ -49,7 +49,6 @@ export const useIsWaving = (
         const predictions = await modelRef.current?.detect(videoRef!);
         const hand = predictions?.find((prediction) => prediction.class === 1);
 
-        console.log('waving', !!hand);
         setIsWaving(!!hand);
       }, frequency);
     }
@@ -57,7 +56,6 @@ export const useIsWaving = (
     trackHand();
 
     return () => {
-      console.log('cleanup');
       modelRef.current?.dispose();
       clearInterval(intervalRef.current);
     };

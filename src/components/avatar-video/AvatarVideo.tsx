@@ -8,18 +8,19 @@ type Props = {
 
 export const AvatarVideo: FC<Props> = ({ type, isVisible, isLoading }) => {
   return (
-    <div className="w-full h-full absolute">
+    <div className="absolute h-full w-full">
       <video
         src={`videos/${type}.mp4`}
         autoPlay
         muted
         loop
-        className={`object-cover absolute top-0 left-0 w-full h-full`}
+        playsInline
+        className={`absolute left-0 top-0 h-full w-full object-cover`}
         style={{ display: isVisible ? 'block' : 'none' }}
       />
 
       {isLoading && (
-        <p className="animate-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl text-zinc-900 bg-zinc-200 px-2">
+        <p className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse bg-zinc-200 px-2 text-3xl text-zinc-900">
           Loading...
         </p>
       )}
