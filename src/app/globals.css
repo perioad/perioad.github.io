@@ -4,22 +4,23 @@
 
 :root {
   --foreground: #000;
-  --background-start: #ccc;
-  --background-end: #fff;
+  --background: #fff;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --foreground: #fff;
-    --background-start: #555;
-    --background-end: #000;
+    --background: #000;
   }
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   color: var(--foreground);
-  background: linear-gradient(to bottom, transparent, var(--background-end))
-    var(--background-start);
+  background: var(--background);
 }
 
 @layer utilities {

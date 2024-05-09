@@ -31,9 +31,9 @@ export const Avatar = () => {
   }, [isInteractive]);
 
   return (
-    <div className="relative">
+    <div className="relative h-60 w-60 sm:h-96 sm:w-96">
       {!WavingComponent && (
-        <div className="relative h-96 w-96">
+        <div className="relative h-full w-full">
           <AvatarVideo
             type="still"
             isVisible={true}
@@ -46,11 +46,18 @@ export const Avatar = () => {
 
       {!isInteractive && (
         <button
-          className=" absolute bottom-5 left-1/2 block -translate-x-1/2 transform border border-none bg-zinc-900 px-5 py-1 text-2xl text-pink-700 transition-all hover:rotate-2 hover:text-pink-600 active:scale-95"
+          className=" absolute bottom-5 left-1/2 block -translate-x-1/2 transform border border-none bg-zinc-900 px-5 py-1 text-2xl text-pink-700 transition-all hover:rotate-2 hover:text-pink-600 active:scale-95 sm:bottom-10"
           onClick={handleInteract}
         >
           Interact
         </button>
+      )}
+
+      {!isInteractive && (
+        <p className="text-center leading-5 sm:text-xl">
+          * you would need to give access to the webcam so you could interact
+          with me
+        </p>
       )}
     </div>
   );

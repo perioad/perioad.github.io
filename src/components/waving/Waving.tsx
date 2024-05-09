@@ -17,7 +17,7 @@ export const Waving = () => {
 
   return (
     <>
-      <div className="relative h-96 w-96">
+      <div className="relative h-full w-full">
         <AvatarVideo
           type="still"
           isVisible={!isWaving}

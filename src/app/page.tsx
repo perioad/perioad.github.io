@@ -1,12 +1,12 @@
 import { General } from '../components/general/General';
-import { Projects } from '../components/projects/Projects';
+import { SoftwareEngineering } from '../components/software-engineering/SoftwareEngineering';
 
 export default function Home() {
   return (
-    <main className="h-screen overflow-y-scroll snap-y snap-mandatory">
+    <main className="h-screen snap-y snap-mandatory overflow-y-scroll">
       <General />
 
-      <Projects />
+      {/* <SoftwareEngineering /> */}
     </main>
   );
 }
