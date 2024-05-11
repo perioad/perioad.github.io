@@ -24,12 +24,14 @@ export const Podcasting = () => {
           height="152"
           allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
           loading="lazy"
+          style={{ backgroundColor: 'rgb(40,40,40)' }}
         ></iframe>
 
         <iframe
           allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write"
           height="175"
           loading="lazy"
+          style={{ backgroundColor: '#f8f8fa' }}
           sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation"
           src="https://embed.podcasts.apple.com/gb/podcast/18-no-bullshit-only-takes-and-marshmallows/id1700967588?i=1000650802289"
         ></iframe>
