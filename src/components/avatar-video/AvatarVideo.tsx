@@ -10,7 +10,7 @@ export const AvatarVideo: FC<Props> = ({ type, isVisible, isLoading }) => {
   return (
     <div className="absolute h-full w-full">
       <video
-        src={`videos/${type}.mp4`}
+        src={`video/${type}.mp4`}
         autoPlay
         muted
         loop

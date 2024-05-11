@@ -5,7 +5,7 @@ export const useIsWaving = (
   videoRef: HTMLVideoElement | null,
   frequency: number,
   width = 450,
-  height = 380
+  height = 380,
 ): [boolean, boolean | null, boolean | null] => {
   const [isWaving, setIsWaving] = useState(false);
   const [isAccessGranted, setIsAccessGranted] = useState<boolean | null>(null);

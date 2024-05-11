@@ -13,7 +13,7 @@ export const Waving = () => {
   const isInteractionReady = isAccessGranted === true && isReady === true;
   const isCameraDenied = isAccessGranted === false;
   const messageClassName =
-    ' w-3/4 mx-2 text-xl mt-5 text-center absolute left-1/2 transform -translate-x-1/2 bottom-5 bg-zinc-900';
+    ' w-3/4 mx-2 mt-5 text-center absolute left-1/2 transform -translate-x-1/2 bottom-5 bg-zinc-900';
 
   return (
     <>
@@ -38,13 +38,13 @@ export const Waving = () => {
 
       {isInteractionReady && (
         <p className={messageClassName}>
-          Wave to me and I&apos;ll wave back :)
+          wave to me and i&apos;ll wave back :)
         </p>
       )}
 
       {isCameraDenied && (
         <p className={messageClassName}>
-          Either there is no camera on your device or permission wasn&apos;t
+          either there is no camera on your device or permission wasn&apos;t
           granted :c
         </p>
       )}

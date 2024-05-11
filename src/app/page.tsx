@@ -1,12 +1,18 @@
-import { General } from '../components/general/General';
-import { SoftwareEngineering } from '../components/software-engineering/SoftwareEngineering';
+import { General } from '../sections/general/General';
+import { Mixing } from '../sections/mixing/Mixing';
+import { Podcasting } from '../sections/podcasting/Podcasting';
+import { SoftwareEngineering } from '../sections/software-engineering/SoftwareEngineering';
 
 export default function Home() {
   return (
-    <main className="h-screen snap-y snap-mandatory overflow-y-scroll">
+    <main className=" h-dvh snap-y snap-mandatory overflow-y-scroll">
       <General />
 
-      {/* <SoftwareEngineering /> */}
+      <SoftwareEngineering />
+
+      <Podcasting />
+
+      <Mixing />
     </main>
   );
 }

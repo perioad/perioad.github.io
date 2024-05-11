@@ -13,15 +13,14 @@ export const Section: FC<PropsWithChildren<Props>> = ({
   id,
 }) => {
   return (
-    <section
-      id={id}
-      className="flex h-screen snap-center flex-col bg-zinc-900 p-5"
-    >
-      <h1 className="text-right text-3xl sm:text-5xl">
-        {number}/{overall}
-      </h1>
+    <section id={id} className="flex h-dvh snap-start flex-col items-center">
+      <div className="flex flex-grow flex-col px-5 backdrop-blur-sm md:max-w-screen-md">
+        <h1 className="w-full text-right text-3xl sm:text-5xl">
+          {number}/{overall}
+        </h1>
 
-      <div className="flex flex-grow justify-center">{children}</div>
+        {children}
+      </div>
     </section>
   );
 };
