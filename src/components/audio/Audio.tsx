@@ -80,10 +80,6 @@ export const Audio: FC<Props> = ({ src }) => {
     if (audioRef.current) {
       audioRef.current.currentTime = 0;
     }
-
-    if (durationRangeRef.current) {
-      durationRangeRef.current.value = '0';
-    }
   }
 
   useEffect(() => {
@@ -117,7 +113,7 @@ export const Audio: FC<Props> = ({ src }) => {
         {isPlaying ? 'stop' : 'play'}
       </button>
 
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-7">
         <p className=" flex justify-between">
           <span>{currentTimeFormatted}</span>
           <span>{durationFormatted}</span>
@@ -129,6 +125,7 @@ export const Audio: FC<Props> = ({ src }) => {
           className={css.rangeInput}
           ref={durationRangeRef}
           max={duration}
+          value={currentTime}
           onInput={handleDurationSliderChange}
         />
 
@@ -142,6 +139,7 @@ export const Audio: FC<Props> = ({ src }) => {
               defaultValue="100"
               className={css.rangeInput}
               ref={volumeRangeRef}
+              value={volume}
               onInput={handleVolumeSliderChange}
             />
           </>
