@@ -17,7 +17,7 @@ export const SoftwareEngineering = () => {
             javascript, typescript, angular, react, angularjs (lol i know),
             nodejs, express, git, jasmine, jest, sass, less, tailwind,
             bootstrap, html, css, nextjs, docker, ngrx, rxjs, redux, aws, azure,
-            mongodb
+            mongodb and more
           </Emphasize>
         </p>
 

@@ -1,14 +1,17 @@
 'use client';
 
-import { FC, useEffect, useRef, useState } from 'react';
+import { FC, useEffect, useMemo, useRef, useState } from 'react';
 import { formatDuration } from '../../utils/duration.utils';
 import { throttle } from 'lodash-es';
 
 import css from './Audio.module.css';
+import { isIOS } from '../../utils/device-detection.utils';
 
 type Props = {
   src: string;
 };
+
+const isIos = isIOS();
 
 export const Audio: FC<Props> = ({ src }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -132,14 +135,16 @@ export const Audio: FC<Props> = ({ src }) => {
 
         <output className=" text-center">volume: {volume}</output>
 
-        <input
-          type="range"
-          max="100"
-          defaultValue="100"
-          className={css.rangeInput}
-          ref={volumeRangeRef}
-          onInput={handleVolumeSliderChange}
-        />
+        {!isIos && (
+          <input
+            type="range"
+            max="100"
+            defaultValue="100"
+            className={css.rangeInput}
+            ref={volumeRangeRef}
+            onInput={handleVolumeSliderChange}
+          />
+        )}
 
         <button
           className={` px-2 py-1 text-2xl text-zinc-900 transition-all ${muteButtonColor} hover:text-white`}
