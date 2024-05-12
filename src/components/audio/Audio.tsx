@@ -5,13 +5,11 @@ import { formatDuration } from '../../utils/duration.utils';
 import { throttle } from 'lodash-es';
 
 import css from './Audio.module.css';
-import { isIOS } from '../../utils/device-detection.utils';
+import { useIsIos } from '../../hooks/useIsIos';
 
 type Props = {
   src: string;
 };
-
-const isIos = isIOS();
 
 export const Audio: FC<Props> = ({ src }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -22,6 +20,7 @@ export const Audio: FC<Props> = ({ src }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(100);
+  const [isIos] = useIsIos();
 
   const playButtonColor = isPlaying ? 'bg-pink-500' : 'bg-green-500';
   const muteButtonColor = isMuted ? 'bg-green-500' : 'bg-red-500';
@@ -133,17 +132,19 @@ export const Audio: FC<Props> = ({ src }) => {
           onInput={handleDurationSliderChange}
         />
 
-        <output className=" text-center">volume: {volume}</output>
-
         {!isIos && (
-          <input
-            type="range"
-            max="100"
-            defaultValue="100"
-            className={css.rangeInput}
-            ref={volumeRangeRef}
-            onInput={handleVolumeSliderChange}
-          />
+          <>
+            <output className=" text-center">volume: {volume}</output>
+
+            <input
+              type="range"
+              max="100"
+              defaultValue="100"
+              className={css.rangeInput}
+              ref={volumeRangeRef}
+              onInput={handleVolumeSliderChange}
+            />
+          </>
         )}
 
         <button
