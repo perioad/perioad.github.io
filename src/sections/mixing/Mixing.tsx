@@ -13,7 +13,7 @@ export const Mixing = () => {
         </p>
 
         <p>
-          give a shot to a <Emphasize>selected track</Emphasize>:
+          give a shot to a selected track <Emphasize>windsandsun</Emphasize>:
         </p>
 
         <Audio src="audio/windsandsun.mp3" />
