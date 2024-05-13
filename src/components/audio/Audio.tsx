@@ -6,6 +6,7 @@ import { throttle } from 'lodash-es';
 
 import css from './Audio.module.css';
 import { useIsIos } from '../../hooks/useIsIos';
+import { useMyContext } from '../../context/context';
 
 type Props = {
   src: string;
@@ -21,6 +22,7 @@ export const Audio: FC<Props> = ({ src }) => {
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(100);
   const [isIos] = useIsIos();
+  const { changeBgAnimationState } = useMyContext();
 
   const playButtonColor = isPlaying ? 'bg-pink-500' : 'bg-green-500';
   const muteButtonColor = isMuted ? 'bg-green-500' : 'bg-red-500';
@@ -30,11 +32,13 @@ export const Audio: FC<Props> = ({ src }) => {
   function handlePlayAudio() {
     setIsPlaying(true);
     audioRef.current?.play();
+    changeBgAnimationState();
   }
 
   function handlePauseAudio() {
     setIsPlaying(false);
     audioRef.current?.pause();
+    changeBgAnimationState();
   }
 
   function handleMute() {
@@ -121,7 +125,6 @@ export const Audio: FC<Props> = ({ src }) => {
 
         <input
           type="range"
-          defaultValue="0"
           className={css.rangeInput}
           ref={durationRangeRef}
           max={duration}
@@ -136,7 +139,6 @@ export const Audio: FC<Props> = ({ src }) => {
             <input
               type="range"
               max="100"
-              defaultValue="100"
               className={css.rangeInput}
               ref={volumeRangeRef}
               value={volume}
