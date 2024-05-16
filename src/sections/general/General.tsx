@@ -22,8 +22,6 @@ export const General = () => {
             , a part time <CustomLink href="#podcasting">podcaster</CustomLink>,
             a part time <CustomLink href="#mixing">music mixer</CustomLink>
           </p>
-
-          <p>if you want to know more - scroll down and you will find more..</p>
         </div>
 
         <Avatar />

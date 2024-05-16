@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
-import { Racing_Sans_One } from 'next/font/google';
+import { Bruno_Ace_SC } from 'next/font/google';
 import './globals.css';
 import { themeKey, dark, light } from '../constants/theme.constants';
-import Script from 'next/script';
 
-const font = Racing_Sans_One({ weight: '400', subsets: ['latin'] });
+const font = Bruno_Ace_SC({ weight: '400', subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'perioad',
@@ -52,7 +51,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${font.className} bg-white text-xl text-zinc-900 sm:text-2xl dark:bg-black dark:text-zinc-200`}
+        className={`${font.className} bg-white text-lg text-zinc-900 sm:text-2xl dark:bg-black dark:text-zinc-200`}
       >
         {children}
       </body>
