@@ -6,16 +6,23 @@ import {
   createContext,
   useState,
   useContext,
+  useCallback,
+  useEffect,
 } from 'react';
+import { dark, light, themeKey } from '../constants/theme.constants';
 
 type ContextProps = {
   isBgAnimationRunning: boolean;
-  changeBgAnimationState: () => void;
+  toggleBgAnimationState: () => void;
+  isDarkTheme: boolean;
+  toggleTheme: () => void;
 };
 
 const MyContext = createContext<ContextProps>({
   isBgAnimationRunning: false,
-  changeBgAnimationState: () => {},
+  toggleBgAnimationState: () => {},
+  isDarkTheme: false,
+  toggleTheme: () => {},
 });
 
 export const useMyContext = () => {
@@ -30,14 +37,36 @@ export const useMyContext = () => {
 
 export const MyContextProvider: FC<PropsWithChildren> = ({ children }) => {
   const [isBgAnimationRunning, setIsBgAnimationRunning] = useState(false);
+  const [isDarkTheme, setIsDarkTheme] = useState(false);
 
-  const changeBgAnimationState = () => {
-    setIsBgAnimationRunning(!isBgAnimationRunning);
-  };
+  const toggleBgAnimationState = useCallback(() => {
+    setIsBgAnimationRunning((prev) => !prev);
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    document.documentElement.classList.toggle(dark);
+
+    setIsDarkTheme((prev) => {
+      localStorage.setItem(themeKey, prev ? light : dark);
+
+      return !prev;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (document.documentElement.classList.contains(dark)) {
+      setIsDarkTheme(true);
+    }
+  }, []);
 
   return (
     <MyContext.Provider
-      value={{ isBgAnimationRunning, changeBgAnimationState }}
+      value={{
+        isBgAnimationRunning,
+        toggleBgAnimationState,
+        isDarkTheme,
+        toggleTheme,
+      }}
     >
       {children}
     </MyContext.Provider>

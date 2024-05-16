@@ -22,7 +22,7 @@ export const Audio: FC<Props> = ({ src }) => {
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(100);
   const [isIos] = useIsIos();
-  const { changeBgAnimationState } = useMyContext();
+  const { toggleBgAnimationState } = useMyContext();
 
   const playButtonColor = isPlaying ? 'bg-pink-500' : 'bg-green-500';
   const muteButtonColor = isMuted ? 'bg-green-500' : 'bg-red-500';
@@ -32,13 +32,13 @@ export const Audio: FC<Props> = ({ src }) => {
   function handlePlayAudio() {
     setIsPlaying(true);
     audioRef.current?.play();
-    changeBgAnimationState();
+    toggleBgAnimationState();
   }
 
   function handlePauseAudio() {
     setIsPlaying(false);
     audioRef.current?.pause();
-    changeBgAnimationState();
+    toggleBgAnimationState();
   }
 
   function handleMute() {
