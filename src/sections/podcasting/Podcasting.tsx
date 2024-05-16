@@ -25,6 +25,7 @@ export const Podcasting = () => {
           allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
           loading="lazy"
           style={{ backgroundColor: 'rgb(40,40,40)' }}
+          title="perigo episode '15. Road to USA - $15000, Jail Time and Much More' on Spotify"
         ></iframe>
 
         <iframe
@@ -34,6 +35,7 @@ export const Podcasting = () => {
           style={{ backgroundColor: '#f8f8fa' }}
           sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation"
           src="https://embed.podcasts.apple.com/gb/podcast/18-no-bullshit-only-takes-and-marshmallows/id1700967588?i=1000650802289"
+          title="perigo episode '18. No Bullshit, Only Takes and Marshmallows' on Apple Podcasts"
         ></iframe>
       </div>
     </Section>

@@ -113,6 +113,7 @@ export const Audio: FC<Props> = ({ src }) => {
       <button
         onClick={() => (isPlaying ? handlePauseAudio() : handlePlayAudio())}
         className={` px-2 py-1 text-2xl transition-all dark:text-zinc-900 ${playButtonColor} hover:text-white`}
+        title={isPlaying ? 'Pause audio' : 'Play audio'}
       >
         {isPlaying ? 'stop' : 'play'}
       </button>
@@ -130,6 +131,7 @@ export const Audio: FC<Props> = ({ src }) => {
           max={duration}
           value={currentTime}
           onInput={handleDurationSliderChange}
+          title="Change audio duration"
         />
 
         {!isIos && (
@@ -143,6 +145,7 @@ export const Audio: FC<Props> = ({ src }) => {
               ref={volumeRangeRef}
               value={volume}
               onInput={handleVolumeSliderChange}
+              title="Change audio volume"
             />
           </>
         )}
@@ -150,6 +153,7 @@ export const Audio: FC<Props> = ({ src }) => {
         <button
           className={` px-2 py-1 text-2xl transition-all dark:text-zinc-900 ${muteButtonColor} hover:text-white`}
           onClick={handleMute}
+          title={isMuted ? 'Unmute audio' : 'Mute audio'}
         >
           {isMuted ? 'unmute' : 'mute'}
         </button>
