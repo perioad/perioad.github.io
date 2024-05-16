@@ -1,7 +1,12 @@
 'use client';
 
-import { FC, PropsWithChildren, createContext, useState } from 'react';
-import { useContext } from 'react';
+import {
+  FC,
+  PropsWithChildren,
+  createContext,
+  useState,
+  useContext,
+} from 'react';
 
 type ContextProps = {
   isBgAnimationRunning: boolean;

@@ -46,7 +46,7 @@ export const Avatar = () => {
 
       {!isInteractive && (
         <button
-          className=" absolute bottom-5 left-1/2 block -translate-x-1/2 transform border border-none bg-zinc-900 px-5 py-1 text-2xl text-pink-500 transition-all hover:rotate-2 hover:text-pink-500 active:scale-95 sm:bottom-10"
+          className=" absolute bottom-5 left-1/2 block -translate-x-1/2 transform border border-none bg-zinc-900 px-5 py-1 text-2xl text-pink-500 transition-all hover:rotate-2 active:scale-95 sm:bottom-10 "
           onClick={handleInteract}
         >
           interact

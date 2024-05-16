@@ -2,28 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground: #000;
-  --background: #fff;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground: #fff;
-    --background: #000;
-  }
-}
-
-html {
-  scroll-behavior: smooth;
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  background-color: #000000;
-}
-
 @layer utilities {
   .text-balance {
     text-wrap: balance;

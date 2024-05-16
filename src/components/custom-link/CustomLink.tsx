@@ -28,7 +28,7 @@ export const CustomLink: FC<PropsWithChildren<Props>> = ({
   return (
     <a
       href={href}
-      className="border-b-2 border-pink-500 transition-all hover:bg-pink-500 hover:text-zinc-900"
+      className="border-b-2 border-pink-500 transition-all hover:bg-pink-500 hover:dark:text-zinc-900"
       target={target}
       onClick={handleClick}
     >

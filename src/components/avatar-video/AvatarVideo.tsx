@@ -20,7 +20,7 @@ export const AvatarVideo: FC<Props> = ({ type, isVisible, isLoading }) => {
       />
 
       {isLoading && (
-        <p className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse bg-zinc-200 px-2 text-3xl text-zinc-900">
+        <p className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse bg-zinc-200 px-2 text-3xl dark:text-zinc-900">
           Loading...
         </p>
       )}

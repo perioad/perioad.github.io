@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Racing_Sans_One } from 'next/font/google';
 import './globals.css';
+import { themeKey, dark, light } from '../constants/theme.constants';
+import Script from 'next/script';
 
 const font = Racing_Sans_One({ weight: '400', subsets: ['latin'] });
 
@@ -31,8 +33,27 @@ export default function RootLayout({
           fetchPriority="low"
           crossOrigin="anonymous"
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (
+                localStorage.getItem('${themeKey}') === '${dark}' ||
+                (!('${themeKey}' in localStorage) &&
+                  window.matchMedia('(prefers-color-scheme: dark)').matches)
+              ) {
+                document.documentElement.classList.add('${dark}');
+                localStorage.setItem('${themeKey}', '${dark}');
+              } else {
+                document.documentElement.classList.remove('${dark}');
+                localStorage.setItem('${themeKey}', '${light}');
+              }
+            `,
+          }}
+        />
       </head>
-      <body className={`${font.className} text-xl text-zinc-200 sm:text-2xl`}>
+      <body
+        className={`${font.className} bg-white text-xl text-zinc-900 sm:text-2xl dark:bg-black dark:text-zinc-200`}
+      >
         {children}
       </body>
     </html>
