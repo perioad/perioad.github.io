@@ -30,7 +30,7 @@ export const ThemeButton = () => {
       title={isDarkTheme ? 'Switch to light theme' : 'Switch to dark theme'}
       onClick={handleToggleTheme}
     >
-      <span className="block h-5 w-5 opacity-80 transition-all hover:scale-125 hover:opacity-100 sm:h-7 sm:w-7">
+      <span className="block h-5 w-5 opacity-80 transition-all hover:scale-110 hover:opacity-100 sm:h-7 sm:w-7">
         <BulbIcon />
       </span>
     </button>
