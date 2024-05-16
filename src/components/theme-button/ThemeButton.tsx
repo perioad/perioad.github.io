@@ -8,10 +8,6 @@ export const ThemeButton = () => {
   const [isDarkTheme, setIsDarkTheme] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  if (!audioRef.current) {
-    audioRef.current = new Audio('audio/switch-sound.mp3');
-  }
-
   const color = isDarkTheme ? 'text-zinc-900' : 'text-yellow-300';
   const hoverColor = isDarkTheme
     ? 'hover:text-yellow-300'
@@ -32,6 +28,12 @@ export const ThemeButton = () => {
   useEffect(() => {
     if (document.documentElement.classList.contains(dark)) {
       setIsDarkTheme(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio('audio/switch-sound.mp3');
     }
   }, []);
 
