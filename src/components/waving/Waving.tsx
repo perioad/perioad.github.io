@@ -13,7 +13,7 @@ export const Waving = () => {
   const isInteractionReady = isAccessGranted === true && isReady === true;
   const isCameraDenied = isAccessGranted === false;
   const messageClassName =
-    ' w-3/4 mx-2 mt-5 text-center absolute left-1/2 transform -translate-x-1/2 bottom-5 bg-zinc-900';
+    ' w-3/4 mx-2 mt-5 text-center absolute left-1/2 transform -translate-x-1/2 bottom-5 dark:bg-zinc-900 bg-white';
 
   return (
     <>
