@@ -16,5 +16,8 @@ const config: Config = {
   },
   plugins: [],
   darkMode: 'selector',
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
 };
 export default config;
