@@ -1,4 +1,4 @@
-import { Audio } from '../../components/audio/Audio';
+import { AudioPlayer } from '../../components/audio-player/AudioPlayer';
 import { Emphasize } from '../../components/emphasize/Emphasize';
 import { Section } from '../../components/section/Section';
 
@@ -16,7 +16,7 @@ export const Mixing = () => {
           give a shot to a selected track <Emphasize>windsandsun</Emphasize>:
         </p>
 
-        <Audio src="audio/windsandsun.mp3" />
+        <AudioPlayer src="audio/windsandsun" />
       </div>
     </Section>
   );
