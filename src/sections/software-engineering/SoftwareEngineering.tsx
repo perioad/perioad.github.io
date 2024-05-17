@@ -22,8 +22,8 @@ export const SoftwareEngineering = () => {
         </p>
 
         <p>
-          in a spare time aside other activities he likes to do side/pet
-          projects which you can find on his{' '}
+          in spare time aside other activities he likes to do side/pet projects
+          which you can find on his{' '}
           <CustomLink href="https://www.github.com/perioad">
             github acc
           </CustomLink>

@@ -1,3 +1,5 @@
+// icon source: https://heroicons.com/
+
 export const BulbIcon = () => {
   return (
     <svg
