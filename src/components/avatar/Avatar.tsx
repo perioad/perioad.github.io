@@ -31,27 +31,29 @@ export const Avatar = () => {
   }, [isInteractive]);
 
   return (
-    <div className="relative h-60 w-60 sm:h-96 sm:w-96">
-      {!WavingComponent && (
-        <div className="relative h-full w-full">
-          <AvatarVideo
-            type="still"
-            isVisible={true}
-            isLoading={isWavingLoading}
-          />
-        </div>
-      )}
+    <>
+      <div className="relative h-60 w-60 sm:h-96 sm:w-96">
+        {!WavingComponent && (
+          <div className="relative h-full w-full">
+            <AvatarVideo
+              type="still"
+              isVisible={true}
+              isLoading={isWavingLoading}
+            />
+          </div>
+        )}
 
-      {WavingComponent && <WavingComponent />}
+        {WavingComponent && <WavingComponent />}
 
-      {!isInteractive && (
-        <button
-          className=" absolute bottom-5 left-1/2 block -translate-x-1/2 transform border border-none bg-zinc-900 px-5 py-1 text-2xl text-pink-500 transition-all hover:rotate-2 active:scale-95 sm:bottom-10 "
-          onClick={handleInteract}
-        >
-          interact
-        </button>
-      )}
+        {!isInteractive && (
+          <button
+            className=" absolute bottom-5 left-1/2 block -translate-x-1/2 transform border border-none bg-zinc-900 px-5 py-1 text-2xl text-pink-500 transition-all hover:rotate-2 active:scale-95 sm:bottom-10 "
+            onClick={handleInteract}
+          >
+            interact
+          </button>
+        )}
+      </div>
 
       {!isInteractive && (
         <p className="text-center text-base leading-5 sm:text-xl">
@@ -59,6 +61,6 @@ export const Avatar = () => {
           with me
         </p>
       )}
-    </div>
+    </>
   );
 };

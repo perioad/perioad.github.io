@@ -26,7 +26,7 @@ export const ThemeButton = () => {
 
   return (
     <button
-      className={`${color} ${hoverColor} absolute left-4 top-5 z-50 flex h-8 w-8 items-center justify-center rounded-full bg-pink-500 sm:h-10 sm:w-10`}
+      className={`${color} ${hoverColor} flex h-8 w-8 items-center justify-center bg-pink-500 sm:h-10 sm:w-10`}
       title={isDarkTheme ? 'Switch to light theme' : 'Switch to dark theme'}
       onClick={handleToggleTheme}
     >

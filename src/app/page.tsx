@@ -11,16 +11,20 @@ export default function Home() {
     <MyContextProvider>
       <BgPattern />
 
-      <ThemeButton />
+      <header className="fixed z-50 flex w-full justify-end px-5 py-3 backdrop-blur-sm">
+        <ThemeButton />
+      </header>
 
-      <main className=" h-dvh snap-y snap-mandatory overflow-y-scroll">
-        <General />
+      <main>
+        <div className="mx-auto px-5 shadow-glass shadow-white backdrop-blur-sm sm:max-w-screen-md dark:shadow-black">
+          <General />
 
-        <SoftwareEngineering />
+          <SoftwareEngineering />
 
-        <Podcasting />
+          <Podcasting />
 
-        <Mixing />
+          <Mixing />
+        </div>
       </main>
     </MyContextProvider>
   );

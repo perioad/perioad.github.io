@@ -9,7 +9,7 @@ export const BgPattern = () => {
 
   return (
     <div
-      className={`${css.pattern} ${animationClass} absolute left-0 top-0 -z-40 h-dvh w-dvw`}
+      className={`${css.pattern} ${animationClass} fixed left-0 top-0 -z-40 h-dvh w-dvw`}
     ></div>
   );
 };

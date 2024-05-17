@@ -30,7 +30,7 @@ export const Podcasting = () => {
 
         <iframe
           allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write"
-          height="175"
+          height="187"
           loading="lazy"
           style={{ backgroundColor: '#f8f8fa' }}
           sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation"
