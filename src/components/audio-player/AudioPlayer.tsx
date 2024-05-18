@@ -7,6 +7,7 @@ import { throttle } from 'lodash-es';
 import css from './AudioPlayer.module.css';
 import { useIsIos } from '../../hooks/useIsIos';
 import { useMyContext } from '../../context/context';
+import { useAudioEffect } from '../../hooks/useAudioEffect';
 
 type Props = {
   src: string;
@@ -23,26 +24,43 @@ export const AudioPlayer: FC<Props> = ({ src }) => {
   const [volume, setVolume] = useState(100);
   const [isIos] = useIsIos();
   const { toggleBgAnimationState } = useMyContext();
+  const buttonDownSound = useAudioEffect('audio/button-down.mp3');
+  const buttonUpSound = useAudioEffect('audio/button-up.mp3');
 
-  const playButtonColor = isPlaying ? 'bg-pink-500' : 'bg-green-500';
-  const muteButtonColor = isMuted ? 'bg-green-500' : 'bg-red-500';
+  const pressedButton = 'scale-[0.99] shadow-player-button';
+  const playButtonStyles = isPlaying
+    ? `${pressedButton} bg-pink-500`
+    : 'bg-green-500';
+  const muteButtonColor = isMuted
+    ? `${pressedButton} bg-green-500`
+    : 'bg-red-500';
   const currentTimeFormatted = formatDuration(currentTime);
   const durationFormatted = formatDuration(duration);
 
   function handlePlayAudio() {
-    setIsPlaying(true);
+    buttonDownSound.current?.play();
     audioRef.current?.play();
+    setIsPlaying(true);
     toggleBgAnimationState();
   }
 
   function handlePauseAudio() {
-    setIsPlaying(false);
+    buttonUpSound.current?.play();
     audioRef.current?.pause();
+    setIsPlaying(false);
     toggleBgAnimationState();
   }
 
   function handleMute() {
-    setIsMuted((prev) => !prev);
+    setIsMuted((prev) => {
+      if (prev) {
+        buttonUpSound.current?.play();
+      } else {
+        buttonDownSound.current?.play();
+      }
+
+      return !prev;
+    });
   }
 
   function handleDurationSliderChange() {
@@ -112,7 +130,7 @@ export const AudioPlayer: FC<Props> = ({ src }) => {
     <>
       <button
         onClick={() => (isPlaying ? handlePauseAudio() : handlePlayAudio())}
-        className={` px-2 py-1 text-2xl transition-all dark:text-zinc-900 ${playButtonColor} hover:text-white`}
+        className={` px-2 py-1 text-2xl transition-all dark:text-zinc-900 ${playButtonStyles} hover:text-white`}
         title={isPlaying ? 'Pause audio' : 'Play audio'}
       >
         {isPlaying ? 'stop' : 'play'}
@@ -151,7 +169,7 @@ export const AudioPlayer: FC<Props> = ({ src }) => {
         )}
 
         <button
-          className={` px-2 py-1 text-2xl transition-all dark:text-zinc-900 ${muteButtonColor} hover:text-white`}
+          className={` px-2 py-1 text-2xl transition-all dark:text-zinc-900 ${muteButtonColor} shadow-inner hover:text-white`}
           onClick={handleMute}
           title={isMuted ? 'Unmute audio' : 'Mute audio'}
         >

@@ -11,6 +11,7 @@ const config: Config = {
     extend: {
       boxShadow: {
         glass: '0 0 30px 5px rgba(0, 0, 0, 1)',
+        ['player-button']: 'inset 0 0 5px rgba(0, 0, 0, 1)',
       },
     },
   },

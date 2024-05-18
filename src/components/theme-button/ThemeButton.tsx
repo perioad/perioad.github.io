@@ -5,11 +5,11 @@ import { useMyContext } from '../../context/context';
 import { useAudioEffect } from '../../hooks/useAudioEffect';
 
 export const ThemeButton = () => {
-  const audioRef = useAudioEffect('audio/switch.mp3');
+  const switchSound = useAudioEffect('audio/switch.mp3');
   const { isDarkTheme, toggleTheme } = useMyContext();
 
   function handleToggleTheme() {
-    audioRef.current?.play();
+    switchSound.current?.play();
     toggleTheme();
   }
 
