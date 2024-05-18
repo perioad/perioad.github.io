@@ -18,24 +18,6 @@ const config: Config = {
   future: {
     hoverOnlyWhenSupported: true,
   },
-  plugins: [extractColorsToVariables],
+  plugins: [],
 };
 export default config;
-
-function extractColorsToVariables({ addBase, theme }) {
-  const newColors = theme('colors');
-  const cssVariables = Object.keys(newColors).reduce((variables, color) => {
-    if (typeof newColors[color] === 'object') {
-      Object.keys(newColors[color]).forEach((shade) => {
-        variables[`--color-${color}-${shade}`] = newColors[color][shade];
-      });
-    } else {
-      variables[`--color-${color}`] = newColors[color];
-    }
-    return variables;
-  }, {});
-
-  addBase({
-    ':root': cssVariables,
-  });
-}
