@@ -130,7 +130,7 @@ export const AudioPlayer: FC<Props> = ({ src }) => {
     <>
       <button
         onClick={() => (isPlaying ? handlePauseAudio() : handlePlayAudio())}
-        className={` px-2 py-1 text-2xl transition-all dark:text-zinc-900 ${playButtonStyles} hover:text-white`}
+        className={` px-2 py-1 text-2xl transition-colors dark:text-zinc-900 ${playButtonStyles} hover:text-white`}
         title={isPlaying ? 'Pause audio' : 'Play audio'}
       >
         {isPlaying ? 'stop' : 'play'}
@@ -169,7 +169,7 @@ export const AudioPlayer: FC<Props> = ({ src }) => {
         )}
 
         <button
-          className={` px-2 py-1 text-2xl transition-all dark:text-zinc-900 ${muteButtonColor} hover:text-white`}
+          className={` px-2 py-1 text-2xl transition-colors dark:text-zinc-900 ${muteButtonColor} hover:text-white`}
           onClick={handleMute}
           title={isMuted ? 'Unmute audio' : 'Mute audio'}
         >
