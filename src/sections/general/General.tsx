@@ -1,9 +1,10 @@
+import { memo } from 'react';
 import { Avatar } from '../../components/avatar/Avatar';
 import { CustomLink } from '../../components/custom-link/CustomLink';
 import { Emphasize } from '../../components/emphasize/Emphasize';
 import { Section } from '../../components/section/Section';
 
-export const General = () => {
+export const General = memo(function General() {
   return (
     <Section number={1} overall={4} id="general">
       <div className=" flex flex-col items-center gap-5">
@@ -28,4 +29,4 @@ export const General = () => {
       </div>
     </Section>
   );
-};
+});

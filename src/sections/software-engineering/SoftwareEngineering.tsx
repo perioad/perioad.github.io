@@ -1,8 +1,9 @@
 import { Emphasize } from '../../components/emphasize/Emphasize';
 import { CustomLink } from '../../components/custom-link/CustomLink';
 import { Section } from '../../components/section/Section';
+import { memo } from 'react';
 
-export const SoftwareEngineering = () => {
+export const SoftwareEngineering = memo(function SoftwareEngineering() {
   return (
     <Section number={2} overall={4} id="software-engineering">
       <div className="flex flex-col gap-2 sm:gap-5">
@@ -31,4 +32,4 @@ export const SoftwareEngineering = () => {
       </div>
     </Section>
   );
-};
+});

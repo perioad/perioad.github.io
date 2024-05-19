@@ -1,7 +1,8 @@
+import { memo } from 'react';
 import { Emphasize } from '../../components/emphasize/Emphasize';
 import { Section } from '../../components/section/Section';
 
-export const Podcasting = () => {
+export const Podcasting = memo(function Podcasting() {
   return (
     <Section number={3} overall={4} id="podcasting">
       <div className="flex flex-col gap-2 sm:gap-5">
@@ -40,4 +41,4 @@ export const Podcasting = () => {
       </div>
     </Section>
   );
-};
+});

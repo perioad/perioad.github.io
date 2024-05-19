@@ -1,10 +1,11 @@
 'use client';
 
-import { useMyContext } from '../../context/context';
+import { memo } from 'react';
 import css from './BgPattern.module.css';
+import { useBgAnimationContext } from '../../context/BgAnimationContext';
 
-export const BgPattern = () => {
-  const { isBgAnimationRunning } = useMyContext();
+export const BgPattern = memo(function BgPattern() {
+  const { isBgAnimationRunning } = useBgAnimationContext();
   const animationClass = isBgAnimationRunning ? css.runAnimation : '';
 
   return (
@@ -12,4 +13,4 @@ export const BgPattern = () => {
       className={`${css.pattern} ${animationClass} fixed left-0 top-0 -z-40 h-dvh w-dvw`}
     ></div>
   );
-};
+});

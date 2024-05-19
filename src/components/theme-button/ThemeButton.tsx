@@ -1,12 +1,12 @@
 'use client';
 
 import { BulbIcon } from '../../icons/BulbIcon';
-import { useMyContext } from '../../context/context';
 import { useAudioEffect } from '../../hooks/useAudioEffect';
+import { useThemeContext } from '../../context/ThemeContext';
 
 export const ThemeButton = () => {
   const switchSound = useAudioEffect('audio/switch.mp3');
-  const { isDarkTheme, toggleTheme } = useMyContext();
+  const { isDarkTheme, toggleTheme } = useThemeContext();
 
   function handleToggleTheme() {
     switchSound.current?.play();

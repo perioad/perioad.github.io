@@ -1,11 +1,11 @@
 'use client';
 
-import { useMyContext } from '../../context/context';
+import { useFontContext } from '../../context/FontContext';
 import { useAudioEffect } from '../../hooks/useAudioEffect';
 import { AtIcon } from '../../icons/AtIcon';
 
 export const FontButton = () => {
-  const { isDyslexicFont, toggleFont } = useMyContext();
+  const { isDyslexicFont, toggleFont } = useFontContext();
   const sparkleSound = useAudioEffect('audio/sparkle.mp3');
 
   function handleToggleFont() {

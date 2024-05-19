@@ -1,8 +1,9 @@
+import { memo } from 'react';
 import { AudioPlayer } from '../../components/audio-player/AudioPlayer';
 import { Emphasize } from '../../components/emphasize/Emphasize';
 import { Section } from '../../components/section/Section';
 
-export const Mixing = () => {
+export const Mixing = memo(function Mixing() {
   return (
     <Section number={4} overall={4} id="mixing">
       <div className="flex flex-col gap-2 sm:gap-5">
@@ -20,4 +21,4 @@ export const Mixing = () => {
       </div>
     </Section>
   );
-};
+});

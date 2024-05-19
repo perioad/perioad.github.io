@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { themeKey, dark, light } from '../constants/theme.constants';
-import { MyContextProvider } from '../context/context';
+import { ContextProvider } from '../context/ContextProvider';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -51,7 +51,7 @@ export default function RootLayout({
       <body
         className={`bg-white text-lg text-zinc-900 sm:text-2xl dark:bg-black dark:text-zinc-200`}
       >
-        <MyContextProvider>{children}</MyContextProvider>
+        <ContextProvider>{children}</ContextProvider>
       </body>
     </html>
   );

@@ -3,17 +3,17 @@
 import { Bruno_Ace_SC, Lexend } from 'next/font/google';
 import { BgPattern } from '../components/bg-pattern/BgPattern';
 import { Header } from '../components/header/Header';
-import { useMyContext } from '../context/context';
 import { General } from '../sections/general/General';
 import { Mixing } from '../sections/mixing/Mixing';
 import { Podcasting } from '../sections/podcasting/Podcasting';
 import { SoftwareEngineering } from '../sections/software-engineering/SoftwareEngineering';
+import { useFontContext } from '../context/FontContext';
 
 const regularFont = Bruno_Ace_SC({ weight: '400', subsets: ['latin'] });
 const dyslexicFont = Lexend({ weight: '400', subsets: ['latin'] });
 
 export default function Home() {
-  const { isDyslexicFont } = useMyContext();
+  const { isDyslexicFont } = useFontContext();
 
   const font = isDyslexicFont ? dyslexicFont : regularFont;
 

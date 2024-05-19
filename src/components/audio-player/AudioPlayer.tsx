@@ -6,8 +6,8 @@ import { throttle } from 'lodash-es';
 
 import css from './AudioPlayer.module.css';
 import { useIsIos } from '../../hooks/useIsIos';
-import { useMyContext } from '../../context/context';
 import { useAudioEffect } from '../../hooks/useAudioEffect';
+import { useBgAnimationContext } from '../../context/BgAnimationContext';
 
 type Props = {
   src: string;
@@ -23,7 +23,7 @@ export const AudioPlayer: FC<Props> = ({ src }) => {
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(100);
   const [isIos] = useIsIos();
-  const { toggleBgAnimationState } = useMyContext();
+  const { toggleBgAnimationState } = useBgAnimationContext();
   const buttonDownSound = useAudioEffect('audio/button-down.mp3');
   const buttonUpSound = useAudioEffect('audio/button-up.mp3');
 
@@ -169,7 +169,7 @@ export const AudioPlayer: FC<Props> = ({ src }) => {
         )}
 
         <button
-          className={` px-2 py-1 text-2xl transition-all dark:text-zinc-900 ${muteButtonColor} shadow-inner hover:text-white`}
+          className={` px-2 py-1 text-2xl transition-all dark:text-zinc-900 ${muteButtonColor} hover:text-white`}
           onClick={handleMute}
           title={isMuted ? 'Unmute audio' : 'Mute audio'}
         >
