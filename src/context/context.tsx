@@ -16,6 +16,8 @@ type ContextProps = {
   toggleBgAnimationState: () => void;
   isDarkTheme: boolean;
   toggleTheme: () => void;
+  isDyslexicFont: boolean;
+  toggleFont: () => void;
 };
 
 const MyContext = createContext<ContextProps>({
@@ -23,6 +25,8 @@ const MyContext = createContext<ContextProps>({
   toggleBgAnimationState: () => {},
   isDarkTheme: false,
   toggleTheme: () => {},
+  isDyslexicFont: false,
+  toggleFont: () => {},
 });
 
 export const useMyContext = () => {
@@ -38,6 +42,7 @@ export const useMyContext = () => {
 export const MyContextProvider: FC<PropsWithChildren> = ({ children }) => {
   const [isBgAnimationRunning, setIsBgAnimationRunning] = useState(false);
   const [isDarkTheme, setIsDarkTheme] = useState(false);
+  const [isDyslexicFont, setIsDyslexicFont] = useState(false);
 
   const toggleBgAnimationState = useCallback(() => {
     setIsBgAnimationRunning((prev) => !prev);
@@ -53,6 +58,10 @@ export const MyContextProvider: FC<PropsWithChildren> = ({ children }) => {
     });
   }, []);
 
+  const toggleFont = useCallback(() => {
+    setIsDyslexicFont((prev) => !prev);
+  }, []);
+
   useEffect(() => {
     if (document.documentElement.classList.contains(dark)) {
       setIsDarkTheme(true);
@@ -66,6 +75,8 @@ export const MyContextProvider: FC<PropsWithChildren> = ({ children }) => {
         toggleBgAnimationState,
         isDarkTheme,
         toggleTheme,
+        isDyslexicFont,
+        toggleFont,
       }}
     >
       {children}

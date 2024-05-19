@@ -1,20 +1,32 @@
+'use client';
+
+import { Bruno_Ace_SC, Lexend } from 'next/font/google';
 import { BgPattern } from '../components/bg-pattern/BgPattern';
 import { Header } from '../components/header/Header';
-import { MyContextProvider } from '../context/context';
+import { useMyContext } from '../context/context';
 import { General } from '../sections/general/General';
 import { Mixing } from '../sections/mixing/Mixing';
 import { Podcasting } from '../sections/podcasting/Podcasting';
 import { SoftwareEngineering } from '../sections/software-engineering/SoftwareEngineering';
 
+const regularFont = Bruno_Ace_SC({ weight: '400', subsets: ['latin'] });
+const dyslexicFont = Lexend({ weight: '400', subsets: ['latin'] });
+
 export default function Home() {
+  const { isDyslexicFont } = useMyContext();
+
+  const font = isDyslexicFont ? dyslexicFont : regularFont;
+
   return (
-    <MyContextProvider>
+    <>
       <BgPattern />
 
       <Header />
 
       <main>
-        <div className="mx-auto px-5 shadow-glass shadow-white backdrop-blur-sm sm:max-w-screen-md dark:shadow-black">
+        <div
+          className={`${font.className} mx-auto px-5 shadow-glass shadow-white backdrop-blur-sm sm:max-w-screen-md dark:shadow-black`}
+        >
           <General />
 
           <SoftwareEngineering />
@@ -24,6 +36,6 @@ export default function Home() {
           <Mixing />
         </div>
       </main>
-    </MyContextProvider>
+    </>
   );
 }

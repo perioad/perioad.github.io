@@ -1,9 +1,7 @@
 import type { Metadata } from 'next';
-import { Bruno_Ace_SC } from 'next/font/google';
-import './globals.css';
 import { themeKey, dark, light } from '../constants/theme.constants';
-
-const font = Bruno_Ace_SC({ weight: '400', subsets: ['latin'] });
+import { MyContextProvider } from '../context/context';
+import './globals.css';
 
 export const metadata: Metadata = {
   title: 'perioad',
@@ -51,9 +49,9 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${font.className} bg-white text-lg text-zinc-900 sm:text-2xl dark:bg-black dark:text-zinc-200`}
+        className={`bg-white text-lg text-zinc-900 sm:text-2xl dark:bg-black dark:text-zinc-200`}
       >
-        {children}
+        <MyContextProvider>{children}</MyContextProvider>
       </body>
     </html>
   );
