@@ -1,6 +1,7 @@
 'use client';
 
 import { FC, HTMLAttributeAnchorTarget, PropsWithChildren } from 'react';
+import { useAudioEffect } from '../../hooks/useAudioEffect';
 
 type Props = {
   href: string;
@@ -10,6 +11,7 @@ export const CustomLink: FC<PropsWithChildren<Props>> = ({
   href,
   children,
 }) => {
+  const popSound = useAudioEffect('audio/pop.mp3');
   const isAnchor: boolean = href.startsWith('#');
   const target: HTMLAttributeAnchorTarget = isAnchor ? '_self' : '_blank';
 
@@ -25,12 +27,17 @@ export const CustomLink: FC<PropsWithChildren<Props>> = ({
     }
   }
 
+  function handleHover() {
+    popSound.current?.play();
+  }
+
   return (
     <a
       href={href}
-      className="border-b-2 border-pink-500 transition-all hover:bg-pink-500 hover:dark:text-zinc-900"
+      className="inline-block border-b-2 border-pink-500 transition-all hover:scale-105 hover:bg-pink-500 hover:dark:text-zinc-900"
       target={target}
       onClick={handleClick}
+      onMouseEnter={handleHover}
     >
       {children}
     </a>

@@ -11,10 +11,10 @@ export const SocialIconLink: FC<PropsWithChildren<Props>> = ({
   href,
   children,
 }) => {
-  const audioRef = useAudioEffect('audio/bloop.mp3');
+  const popSound = useAudioEffect('audio/pop.mp3');
 
   function handleHover() {
-    audioRef.current?.play();
+    popSound.current?.play();
   }
 
   return (
