@@ -2,7 +2,6 @@
 
 import { useFontContext } from '../../context/FontContext';
 import { useAudioEffect } from '../../hooks/useAudioEffect';
-import { AtIcon } from '../../icons/AtIcon';
 
 export const FontButton = () => {
   const { isDyslexicFont, toggleFont } = useFontContext();
@@ -23,8 +22,8 @@ export const FontButton = () => {
       }
       onClick={handleToggleFont}
     >
-      <span className="block h-5 w-5 transition-all hover:scale-110 sm:h-7 sm:w-7">
-        <AtIcon />
+      <span className="block h-5 w-5 leading-5 transition-all hover:scale-110 sm:h-7 sm:w-7 sm:leading-7">
+        F
       </span>
     </button>
   );
