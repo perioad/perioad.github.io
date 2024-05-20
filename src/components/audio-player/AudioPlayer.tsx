@@ -8,6 +8,7 @@ import css from './AudioPlayer.module.css';
 import { useIsIos } from '../../hooks/useIsIos';
 import { useAudioEffect } from '../../hooks/useAudioEffect';
 import { useBgAnimationContext } from '../../context/BgAnimationContext';
+import { useSpeakerContext } from '../../context/SpeakerContext';
 
 type Props = {
   src: string;
@@ -18,7 +19,6 @@ export const AudioPlayer: FC<Props> = ({ src }) => {
   const durationRangeRef = useRef<HTMLInputElement>(null);
   const volumeRangeRef = useRef<HTMLInputElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(100);
@@ -26,14 +26,15 @@ export const AudioPlayer: FC<Props> = ({ src }) => {
   const { toggleBgAnimationState } = useBgAnimationContext();
   const buttonDownSound = useAudioEffect('audio/button-down.mp3');
   const buttonUpSound = useAudioEffect('audio/button-up.mp3');
+  const { isSpeakerAllowed, setIsSpeakerAllowed } = useSpeakerContext();
 
   const pressedButton = 'scale-[0.99] shadow-player-button';
   const playButtonStyles = isPlaying
     ? `${pressedButton} bg-pink-500`
     : 'bg-green-500';
-  const muteButtonColor = isMuted
-    ? `${pressedButton} bg-green-500`
-    : 'bg-red-500';
+  const muteButtonColor = isSpeakerAllowed
+    ? 'bg-red-500'
+    : `${pressedButton} bg-green-500`;
   const currentTimeFormatted = formatDuration(currentTime);
   const durationFormatted = formatDuration(duration);
 
@@ -52,15 +53,13 @@ export const AudioPlayer: FC<Props> = ({ src }) => {
   }
 
   function handleMute() {
-    setIsMuted((prev) => {
-      if (prev) {
-        buttonUpSound.current?.play();
-      } else {
-        buttonDownSound.current?.play();
-      }
+    setIsSpeakerAllowed(!isSpeakerAllowed);
 
-      return !prev;
-    });
+    if (isSpeakerAllowed) {
+      buttonUpSound.current?.play();
+    } else {
+      buttonDownSound.current?.play();
+    }
   }
 
   function handleDurationSliderChange() {
@@ -171,15 +170,15 @@ export const AudioPlayer: FC<Props> = ({ src }) => {
         <button
           className={` px-2 py-1 text-2xl transition-colors dark:text-zinc-900 ${muteButtonColor} hover:text-white`}
           onClick={handleMute}
-          title={isMuted ? 'Unmute audio' : 'Mute audio'}
+          title={isSpeakerAllowed ? 'Unmute audio' : 'Mute audio'}
         >
-          {isMuted ? 'unmute' : 'mute'}
+          {isSpeakerAllowed ? 'mute' : 'unmute'}
         </button>
       </div>
 
       <audio
         ref={audioRef}
-        muted={isMuted}
+        muted={!isSpeakerAllowed}
         className=" hidden"
         preload="metadata"
         onTimeUpdate={handleTimeUpdate}

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { themeKey, dark, light } from '../constants/theme.constants';
+import { themeKey, dark, light } from '../constants/local-storage.constants';
 import { ContextProvider } from '../context/ContextProvider';
 import './globals.css';
 

@@ -4,15 +4,15 @@ import { FC, PropsWithChildren } from 'react';
 import { BgAnimationContextProvider } from './BgAnimationContext';
 import { ThemeContextProvider } from './ThemeContext';
 import { FontContextProvider } from './FontContext';
-import { SoundContextProvider } from './SoundContext';
+import { SpeakerContextProvider } from './SpeakerContext';
 
 export const ContextProvider: FC<PropsWithChildren> = ({ children }) => {
   return (
     <BgAnimationContextProvider>
       <ThemeContextProvider>
-        <SoundContextProvider>
+        <SpeakerContextProvider>
           <FontContextProvider>{children}</FontContextProvider>
-        </SoundContextProvider>
+        </SpeakerContextProvider>
       </ThemeContextProvider>
     </BgAnimationContextProvider>
   );

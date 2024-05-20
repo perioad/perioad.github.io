@@ -8,7 +8,7 @@ import { Mixing } from '../sections/mixing/Mixing';
 import { Podcasting } from '../sections/podcasting/Podcasting';
 import { SoftwareEngineering } from '../sections/software-engineering/SoftwareEngineering';
 import { useFontContext } from '../context/FontContext';
-import { AllowSound } from '../components/allow-sound/AllowSound';
+import { SpeakerPrompt } from '../components/speaker-prompt/SpeakerPrompt';
 
 const regularFont = Bruno_Ace_SC({ weight: '400', subsets: ['latin'] });
 const dyslexicFont = Lexend({ weight: '400', subsets: ['latin'] });
@@ -20,7 +20,7 @@ export default function Home() {
 
   return (
     <div className={`${font.className}`}>
-      <AllowSound />
+      <SpeakerPrompt />
 
       <BgPattern />
 

@@ -1,18 +1,23 @@
 import { useEffect } from 'react';
-import { useSoundContext } from '../context/SoundContext';
+import { useSpeakerContext } from '../context/SpeakerContext';
 
 const audioRegistry = new Map<string, { current: HTMLAudioElement | null }>();
 
 export const useAudioEffect = (src: string, isForceLoad = false) => {
-  const { isSoundAllowed } = useSoundContext();
+  const { isSpeakerAllowed } = useSpeakerContext();
 
   useEffect(() => {
     const audioRef = audioRegistry.get(src);
 
-    if ((isForceLoad || isSoundAllowed) && !audioRef!.current) {
+    if ((isForceLoad || isSpeakerAllowed) && !audioRef!.current) {
       audioRef!.current = new Audio(src);
+    } else if (!isSpeakerAllowed && audioRef!.current) {
+      audioRef!.current.pause();
+      audioRef!.current.muted = true;
+    } else if (isSpeakerAllowed && audioRef!.current?.muted) {
+      audioRef!.current.muted = false;
     }
-  }, [src, isSoundAllowed, isForceLoad]);
+  }, [src, isSpeakerAllowed, isForceLoad]);
 
   if (!audioRegistry.has(src)) {
     audioRegistry.set(src, { current: null });

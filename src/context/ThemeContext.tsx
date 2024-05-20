@@ -10,7 +10,7 @@ import {
   useEffect,
   useMemo,
 } from 'react';
-import { dark, light, themeKey } from '../constants/theme.constants';
+import { dark, light, themeKey } from '../constants/local-storage.constants';
 
 type ThemeContextProps = {
   isDarkTheme: boolean;
