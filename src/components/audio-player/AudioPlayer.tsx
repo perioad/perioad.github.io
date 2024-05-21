@@ -37,6 +37,8 @@ export const AudioPlayer: FC<Props> = ({ src }) => {
     : `${pressedButton} bg-green-500`;
   const currentTimeFormatted = formatDuration(currentTime);
   const durationFormatted = formatDuration(duration);
+  const playButtonTitle = isPlaying ? 'Pause audio' : 'Play audio';
+  const muteButtonTitle = isSpeakerAllowed ? 'Mute audio' : 'Unmute audio';
 
   function handlePlayAudio() {
     buttonDownSound.current?.play();
@@ -130,7 +132,8 @@ export const AudioPlayer: FC<Props> = ({ src }) => {
       <button
         onClick={() => (isPlaying ? handlePauseAudio() : handlePlayAudio())}
         className={` px-2 py-1 text-2xl transition-colors dark:text-zinc-900 ${playButtonStyles} hover:text-white`}
-        title={isPlaying ? 'Pause audio' : 'Play audio'}
+        title={playButtonTitle}
+        aria-label={playButtonTitle}
       >
         {isPlaying ? 'stop' : 'play'}
       </button>
@@ -149,6 +152,7 @@ export const AudioPlayer: FC<Props> = ({ src }) => {
           value={currentTime}
           onInput={handleDurationSliderChange}
           title="Change audio duration"
+          aria-label="Change audio duration"
         />
 
         {!isIos && (
@@ -163,6 +167,7 @@ export const AudioPlayer: FC<Props> = ({ src }) => {
               value={volume}
               onInput={handleVolumeSliderChange}
               title="Change audio volume"
+              aria-label="Change audio volume"
             />
           </>
         )}
@@ -170,7 +175,8 @@ export const AudioPlayer: FC<Props> = ({ src }) => {
         <button
           className={` px-2 py-1 text-2xl transition-colors dark:text-zinc-900 ${muteButtonColor} hover:text-white`}
           onClick={handleMute}
-          title={isSpeakerAllowed ? 'Unmute audio' : 'Mute audio'}
+          title={muteButtonTitle}
+          aria-label={muteButtonTitle}
         >
           {isSpeakerAllowed ? 'mute' : 'unmute'}
         </button>

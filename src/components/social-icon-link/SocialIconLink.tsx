@@ -5,11 +5,13 @@ import { useAudioEffect } from '../../hooks/useAudioEffect';
 
 type Props = {
   href: string;
+  title: string;
 };
 
 export const SocialIconLink: FC<PropsWithChildren<Props>> = ({
   href,
   children,
+  title,
 }) => {
   const popSound = useAudioEffect('audio/pop.mp3');
 
@@ -23,6 +25,8 @@ export const SocialIconLink: FC<PropsWithChildren<Props>> = ({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
+      title={title}
+      aria-label={title}
       onMouseEnter={handleHover}
     >
       {children}

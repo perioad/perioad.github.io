@@ -17,6 +17,7 @@ export const SpeakerButton = () => {
   const speakerOffIconTranslateY = isSpeakerAllowed
     ? '-translate-y-1/2'
     : '-translate-y-[200%]';
+  const title = isSpeakerAllowed ? 'Mute audio' : 'Unmute audio';
 
   function handleToggleSpeaker() {
     if (!isSpeakerAllowed) {
@@ -33,7 +34,8 @@ export const SpeakerButton = () => {
   return (
     <button
       className={`relative h-8 w-8 overflow-hidden bg-pink-500 text-white hover:text-zinc-900 sm:h-10 sm:w-10 dark:text-zinc-900 dark:hover:text-white`}
-      title={isSpeakerAllowed ? 'Mute audio' : 'Unmute audio'}
+      title={title}
+      aria-label={title}
       onClick={handleToggleSpeaker}
     >
       <span
