@@ -33,9 +33,7 @@ export const SpeakerButton = () => {
   return (
     <button
       className={`relative h-8 w-8 overflow-hidden bg-pink-500 text-white hover:text-zinc-900 sm:h-10 sm:w-10 dark:text-zinc-900 dark:hover:text-white`}
-      title={
-        isSpeakerAllowed ? 'Turn off sound effects' : 'Turn on sound effects'
-      }
+      title={isSpeakerAllowed ? 'Mute audio' : 'Unmute audio'}
       onClick={handleToggleSpeaker}
     >
       <span
