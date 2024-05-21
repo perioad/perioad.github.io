@@ -5,7 +5,7 @@ import { memo } from 'react';
 export const SoftwareEngineeringContent = memo(
   function SoftwareEngineeringContent() {
     return (
-      <div className="flex flex-col gap-2 sm:gap-5">
+      <div className="flex animate-appear flex-col gap-2 sm:gap-5">
         <p>
           <Emphasize>perioad</Emphasize> has been writing code since 2019 at{' '}
           <CustomLink href="https://www.epam.com">epam systems</CustomLink>

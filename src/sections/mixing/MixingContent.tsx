@@ -4,7 +4,7 @@ import { Emphasize } from '../../components/emphasize/Emphasize';
 
 export const MixingContent = memo(function MixingContent() {
   return (
-    <div className="flex flex-col gap-2 sm:gap-5">
+    <div className="flex animate-appear flex-col gap-2 sm:gap-5">
       <p>
         <Emphasize>perioad</Emphasize> loves listening to music and sometimes he
         mixes the most beloved tracks from a period of his life into a single

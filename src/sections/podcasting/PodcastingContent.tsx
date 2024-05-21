@@ -3,7 +3,7 @@ import { Emphasize } from '../../components/emphasize/Emphasize';
 
 export const PodcastingContent = memo(function PodcastingContent() {
   return (
-    <div className="flex flex-col gap-2 sm:gap-5">
+    <div className="flex animate-appear flex-col gap-2 sm:gap-5">
       <p>
         in 2023 <Emphasize>perioad</Emphasize> with his friend{' '}
         <Emphasize>claudia</Emphasize> created a podcast{' '}
