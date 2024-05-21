@@ -1,20 +1,11 @@
-import { FC, PropsWithChildren } from 'react';
+import { PropsWithChildren, forwardRef } from 'react';
 
-type Props = {
-  number: number;
-  overall: number;
-  id: string;
-};
-
-export const Section: FC<PropsWithChildren<Props>> = ({
-  number,
-  overall,
-  children,
-  id,
-}) => {
-  return (
-    <section id={id} className="flex min-h-screen flex-grow flex-col pt-16">
-      {children}
-    </section>
-  );
-};
+export const Section = forwardRef<HTMLElement, PropsWithChildren>(
+  function Section({ children }, ref) {
+    return (
+      <section ref={ref} className="flex min-h-screen flex-grow flex-col pt-16">
+        {children}
+      </section>
+    );
+  },
+);

@@ -6,7 +6,7 @@ import { Section } from '../../components/section/Section';
 
 export const General = memo(function General() {
   return (
-    <Section number={1} overall={4} id="general">
+    <Section>
       <div className=" flex flex-col items-center gap-5">
         <div className="flex flex-col gap-2 sm:gap-5">
           <h1 className="text-3xl font-bold sm:text-5xl">
