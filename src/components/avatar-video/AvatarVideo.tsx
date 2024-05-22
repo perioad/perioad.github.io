@@ -8,7 +8,6 @@ type Props = {
 };
 
 export const AvatarVideo: FC<Props> = ({ type, isVisible, isLoading }) => {
-  console.log('AvatarVideo render');
   return (
     <div className="absolute h-full w-full">
       <video

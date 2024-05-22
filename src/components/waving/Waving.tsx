@@ -3,26 +3,27 @@
 import { useState } from 'react';
 import { useIsWaving } from '../../hooks/useIsWaving';
 import { AvatarVideo } from '../avatar-video/AvatarVideo';
+import { Spinner } from '../spinner/Spinner';
 
 export const Waving = () => {
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(
     null,
   );
-  const [isWaving, isAccessGranted, isReady] = useIsWaving(videoElement, 1000);
+  const [isWaving, isAccessGranted, isReady] = useIsWaving(videoElement, 500);
 
   const isInteractionReady = isAccessGranted === true && isReady === true;
   const isCameraDenied = isAccessGranted === false;
   const messageClassName =
-    ' w-3/4 mx-2 mt-5 text-center absolute left-1/2 transform -translate-x-1/2 bottom-5 dark:bg-zinc-900 bg-white';
+    ' w-3/4 mx-2 mt-5 text-center absolute left-1/2 transform -translate-x-1/2 bottom-5 dark:bg-zinc-900 bg-white animate-appear';
 
   return (
     <>
-      <div className="relative h-full w-full">
-        <AvatarVideo
-          type="still"
-          isVisible={!isWaving}
-          isLoading={isReady === null && !isCameraDenied}
-        />
+      <div className=" absolute left-0 top-0 h-full w-full">
+        {isReady === null && !isCameraDenied && (
+          <div className="absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 sm:h-32 sm:w-32">
+            <Spinner />
+          </div>
+        )}
 
         <AvatarVideo type="waving" isVisible={isWaving} />
 
