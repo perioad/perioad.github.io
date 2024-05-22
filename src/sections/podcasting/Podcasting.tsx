@@ -9,7 +9,7 @@ const PodcastingContent = lazy(() =>
 
 export const Podcasting = function Podcasting() {
   return (
-    <LazySection>
+    <LazySection id="podcasting">
       <PodcastingContent />
     </LazySection>
   );

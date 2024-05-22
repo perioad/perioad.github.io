@@ -9,7 +9,7 @@ const SoftwareEngineeringContent = lazy(() =>
 
 export const SoftwareEngineering = function SoftwareEngineering() {
   return (
-    <LazySection>
+    <LazySection id="software-engineering">
       <SoftwareEngineeringContent />
     </LazySection>
   );

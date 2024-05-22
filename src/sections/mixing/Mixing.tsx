@@ -9,7 +9,7 @@ const MixingContent = lazy(() =>
 
 export const Mixing = function Mixing() {
   return (
-    <LazySection>
+    <LazySection id="mixing">
       <MixingContent />
     </LazySection>
   );
