@@ -38,7 +38,7 @@ export const Avatar = () => {
 
   return (
     <>
-      <div className="relative h-60 w-60 sm:h-96 sm:w-96">
+      <div className="before:animate-spin-border relative h-60 w-60 overflow-hidden before:absolute before:left-1/2 before:top-1/2 before:h-[400px] before:w-[200px] before:origin-top before:-translate-x-1/2 before:bg-gradient-to-l before:from-transparent before:via-pink-500 before:to-transparent sm:h-96 sm:w-96 sm:before:w-[300px]">
         <div className="relative h-full w-full">
           <AvatarVideo
             type="still"

@@ -9,14 +9,14 @@ type Props = {
 
 export const AvatarVideo: FC<Props> = ({ type, isVisible, isLoading }) => {
   return (
-    <div className="absolute h-full w-full">
+    <div className="absolute flex h-full w-full items-center justify-center">
       <video
         src={`video/${type}.mp4`}
         autoPlay
         muted
         loop
         playsInline
-        className={`absolute left-0 top-0 h-full w-full object-cover`}
+        className={`relative h-[98%] w-[98%] bg-white object-cover dark:bg-black`}
         style={{ display: isVisible ? 'block' : 'none' }}
       />
 
