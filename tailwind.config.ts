@@ -16,6 +16,7 @@ const config: Config = {
       animation: {
         appear: 'appear 0.5s ease-in-out',
         ['spin-border']: 'spinBorder 5s linear infinite',
+        ['bg-pattern']: 'colorChange 5s linear infinite',
       },
       keyframes: {
         appear: {
@@ -32,6 +33,14 @@ const config: Config = {
           },
           '100%': {
             transform: 'translate(-50%, 0) rotate(360deg)',
+          },
+        },
+        colorChange: {
+          '0%': {
+            filter: 'hue-rotate(0deg)',
+          },
+          '100%': {
+            filter: 'hue-rotate(360deg)',
           },
         },
       },

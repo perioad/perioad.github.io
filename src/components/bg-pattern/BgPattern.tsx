@@ -6,11 +6,13 @@ import { useBgAnimationContext } from '../../context/BgAnimationContext';
 
 export const BgPattern = memo(function BgPattern() {
   const { isBgAnimationRunning } = useBgAnimationContext();
-  const animationClass = isBgAnimationRunning ? css.runAnimation : '';
+  const animationClass = isBgAnimationRunning
+    ? ''
+    : '[animation-play-state:paused]';
 
   return (
     <div
-      className={`${css.pattern} ${animationClass} fixed left-0 top-0 -z-40 h-dvh w-dvw`}
+      className={`${css.pattern} ${animationClass} animate-bg-pattern fixed left-0 top-0 -z-40 h-dvh w-dvw motion-reduce:animate-none`}
     ></div>
   );
 });
