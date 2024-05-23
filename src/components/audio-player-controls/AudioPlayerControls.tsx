@@ -32,7 +32,7 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
 
   const pressedButton = 'scale-[0.99] shadow-player-button';
   const playButtonStyles = isPlaying
-    ? `${pressedButton} bg-pink-500`
+    ? `${pressedButton} bg-red-500`
     : 'bg-green-500';
   const muteButtonColor = isSpeakerAllowed
     ? 'bg-red-500'
