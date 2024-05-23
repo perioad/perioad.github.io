@@ -28,7 +28,7 @@ export default function Home() {
 
       <main>
         <div
-          className={`mx-auto px-5 shadow-glass shadow-white backdrop-blur-sm sm:max-w-screen-md dark:shadow-black`}
+          className={`mx-auto px-5 pb-5 shadow-glass shadow-white backdrop-blur-sm sm:max-w-screen-md dark:shadow-black`}
         >
           <General />
 
