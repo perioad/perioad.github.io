@@ -15,7 +15,7 @@ export const MixingContent = memo(function MixingContent() {
         give a shot to a selected track <Emphasize>windsandsun</Emphasize>:
       </p>
 
-      <AudioPlayer src="audio/windsandsun" />
+      <AudioPlayer src="music/windsandsun" />
     </div>
   );
 });

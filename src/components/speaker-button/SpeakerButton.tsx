@@ -7,7 +7,7 @@ import { SpeakerOnIcon } from '../../icons/SpeakerOnIcon';
 
 export const SpeakerButton = () => {
   const { isSpeakerAllowed, setIsSpeakerAllowed } = useSpeakerContext();
-  const swooshSound = useAudioEffect('audio/swoosh.mp3');
+  const badumSound = useAudioEffect('audio/badum.mp3');
 
   const shouldShowSpeakerButton = isSpeakerAllowed !== null;
   const speakerIconCommonClasses = `absolute left-1/2 top-1/2 block h-5 w-5 -translate-x-1/2 transition-all hover:scale-110 sm:h-7 sm:w-7`;
@@ -21,7 +21,7 @@ export const SpeakerButton = () => {
 
   function handleToggleSpeaker() {
     if (!isSpeakerAllowed) {
-      swooshSound.current?.play();
+      badumSound.current?.play();
     }
 
     setIsSpeakerAllowed(!isSpeakerAllowed);

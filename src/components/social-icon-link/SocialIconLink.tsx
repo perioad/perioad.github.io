@@ -13,10 +13,10 @@ export const SocialIconLink: FC<PropsWithChildren<Props>> = ({
   children,
   title,
 }) => {
-  const popSound = useAudioEffect('audio/pop.mp3');
+  const swooshSound = useAudioEffect('audio/swoosh.mp3');
 
   function handleHover() {
-    popSound.current?.play();
+    swooshSound.current?.play();
   }
 
   return (

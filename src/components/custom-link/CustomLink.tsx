@@ -11,7 +11,7 @@ export const CustomLink: FC<PropsWithChildren<Props>> = ({
   href,
   children,
 }) => {
-  const popSound = useAudioEffect('audio/pop.mp3');
+  const swooshSound = useAudioEffect('audio/swoosh.mp3');
   const isAnchor: boolean = href.startsWith('#');
   const target: HTMLAttributeAnchorTarget = isAnchor ? '_self' : '_blank';
 
@@ -28,7 +28,7 @@ export const CustomLink: FC<PropsWithChildren<Props>> = ({
   }
 
   function handleHover() {
-    popSound.current?.play();
+    swooshSound.current?.play();
   }
 
   return (

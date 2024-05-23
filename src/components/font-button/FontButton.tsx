@@ -5,14 +5,14 @@ import { useAudioEffect } from '../../hooks/useAudioEffect';
 
 export const FontButton = () => {
   const { isDyslexicFont, toggleFont } = useFontContext();
-  const sparkleSound = useAudioEffect('audio/sparkle.mp3');
+  const brushSound = useAudioEffect('audio/brush.mp3');
 
   const title = isDyslexicFont
     ? 'Switch to regural font'
     : 'Switch to font for dyslexia';
 
   function handleToggleFont() {
-    sparkleSound.current?.play();
+    brushSound.current?.play();
     toggleFont();
   }
 
