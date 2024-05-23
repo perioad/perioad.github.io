@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { useSpeakerContext } from '../../context/SpeakerContext';
-import { useAudioEffect } from '../../hooks/useAudioEffect';
+import { useAudioEffect } from '../../hooks/useAudio';
 
 export const SpeakerPrompt = memo(function SpeakerPrompt() {
   const { isSpeakerAllowed, setIsSpeakerAllowed } = useSpeakerContext();
@@ -23,7 +23,7 @@ export const SpeakerPrompt = memo(function SpeakerPrompt() {
   }
 
   return (
-    <div className="animate-appear fixed left-0 top-0 z-40 flex h-full w-full justify-center bg-white bg-opacity-85 px-5 backdrop-blur-sm dark:bg-black dark:bg-opacity-90">
+    <div className="fixed left-0 top-0 z-40 flex h-full w-full animate-appear justify-center bg-white bg-opacity-85 px-5 backdrop-blur-sm dark:bg-black dark:bg-opacity-90">
       <div className="flex flex-col justify-center gap-5 sm:max-w-screen-md">
         <p>
           hi there! to make the experience on my site unique I added different

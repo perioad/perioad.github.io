@@ -1,7 +1,7 @@
 'use client';
 
 import { useSpeakerContext } from '../../context/SpeakerContext';
-import { useAudioEffect } from '../../hooks/useAudioEffect';
+import { useAudioEffect } from '../../hooks/useAudio';
 import { SpeakerOffIcon } from '../../icons/SpeakerOffIcon';
 import { SpeakerOnIcon } from '../../icons/SpeakerOnIcon';
 

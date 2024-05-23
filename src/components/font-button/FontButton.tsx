@@ -1,7 +1,7 @@
 'use client';
 
 import { useFontContext } from '../../context/FontContext';
-import { useAudioEffect } from '../../hooks/useAudioEffect';
+import { useAudioEffect } from '../../hooks/useAudio';
 
 export const FontButton = () => {
   const { isDyslexicFont, toggleFont } = useFontContext();

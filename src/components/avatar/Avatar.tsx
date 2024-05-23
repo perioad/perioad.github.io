@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AvatarVideo } from '../avatar-video/AvatarVideo';
-import { useAudioEffect } from '../../hooks/useAudioEffect';
+import { useAudioEffect } from '../../hooks/useAudio';
 
 export const Avatar = () => {
   const [isInteractive, setIsInteractive] = useState(false);

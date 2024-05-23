@@ -15,5 +15,5 @@ export function useIsIos() {
     setIsIos(isIt);
   }, []);
 
-  return [isIos];
+  return isIos;
 }
