@@ -12,7 +12,7 @@ export const AudioPlayerTracks: FC<Props> = ({
   selectTrack,
 }) => {
   return (
-    <ul className="max-h-32 overflow-scroll border border-b-0 border-t-0 border-pink-500">
+    <ul className="max-h-32 overflow-scroll border border-b-0 border-t-0 border-pink-500 sm:max-h-36">
       {tracks.map((track, index) => (
         <li key={track}>
           <button
