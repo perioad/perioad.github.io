@@ -10,7 +10,6 @@ const tracks = [
   `carousel part II`,
   `carousel part I`,
   `music is different`,
-  `let's leave it here`,
 ];
 
 export const AudioPlayer = () => {
