@@ -49,7 +49,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`bg-white text-lg text-zinc-900 sm:text-2xl dark:bg-black dark:text-zinc-200`}
+        className={`bg-white text-lg text-zinc-900 selection:bg-orange-500 sm:text-2xl dark:bg-black dark:text-zinc-200`}
       >
         <ContextProvider>{children}</ContextProvider>
       </body>
