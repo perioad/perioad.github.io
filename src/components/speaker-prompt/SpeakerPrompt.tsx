@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { useSpeakerContext } from '../../context/SpeakerContext';
-import { useAudioEffect } from '../../hooks/useAudio';
+import { useAudioEffect } from '../../hooks/useAudioEffect';
 
 export const SpeakerPrompt = memo(function SpeakerPrompt() {
   const { isSpeakerAllowed, setIsSpeakerAllowed } = useSpeakerContext();

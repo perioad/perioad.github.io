@@ -1,7 +1,7 @@
 'use client';
 
 import { FC, HTMLAttributeAnchorTarget, PropsWithChildren } from 'react';
-import { useAudioEffect } from '../../hooks/useAudio';
+import { useAudioEffect } from '../../hooks/useAudioEffect';
 
 type Props = {
   href: string;

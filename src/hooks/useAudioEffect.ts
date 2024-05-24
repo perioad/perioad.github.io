@@ -3,13 +3,13 @@ import { useSpeakerContext } from '../context/SpeakerContext';
 
 const audioRegistry = new Map<string, { current: HTMLAudioElement | null }>();
 
-export const useAudioEffect = (src: string, isForceLoad = false) => {
+export const useAudioEffect = (src: string, ignorePermissions = false) => {
   const { isSpeakerAllowed } = useSpeakerContext();
 
   useEffect(() => {
     const audioRef = audioRegistry.get(src);
 
-    if ((isForceLoad || isSpeakerAllowed) && !audioRef!.current) {
+    if ((ignorePermissions || isSpeakerAllowed) && !audioRef!.current) {
       audioRef!.current = new Audio(src);
     } else if (!isSpeakerAllowed && audioRef!.current) {
       audioRef!.current.pause();
@@ -17,7 +17,7 @@ export const useAudioEffect = (src: string, isForceLoad = false) => {
     } else if (isSpeakerAllowed && audioRef!.current?.muted) {
       audioRef!.current.muted = false;
     }
-  }, [src, isSpeakerAllowed, isForceLoad]);
+  }, [src, isSpeakerAllowed, ignorePermissions]);
 
   if (!audioRegistry.has(src)) {
     audioRegistry.set(src, { current: null });

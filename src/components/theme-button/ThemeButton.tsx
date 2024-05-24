@@ -1,7 +1,7 @@
 'use client';
 
 import { BulbIcon } from '../../icons/BulbIcon';
-import { useAudioEffect } from '../../hooks/useAudio';
+import { useAudioEffect } from '../../hooks/useAudioEffect';
 import { useThemeContext } from '../../context/ThemeContext';
 
 export const ThemeButton = () => {

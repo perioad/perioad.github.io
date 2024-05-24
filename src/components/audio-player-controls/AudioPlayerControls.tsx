@@ -4,7 +4,7 @@ import { throttle } from 'lodash-es';
 
 import css from './AudioPlayerControls.module.css';
 import { useIsIos } from '../../hooks/useIsIos';
-import { useAudioEffect as useAudio } from '../../hooks/useAudio';
+import { useAudioEffect } from '../../hooks/useAudioEffect';
 import { useBgAnimationContext } from '../../context/BgAnimationContext';
 import { useSpeakerContext } from '../../context/SpeakerContext';
 import { useIsOggCompatible } from '../../hooks/useIsOggCompatible';
@@ -23,12 +23,12 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
   const isIos = useIsIos();
   const isOggCompatible = useIsOggCompatible();
   const { toggleBgAnimationState } = useBgAnimationContext();
-  const buttonDownSound = useAudio('audio/button-down.mp3');
-  const buttonUpSound = useAudio('audio/button-up.mp3');
+  const buttonDownSound = useAudioEffect('audio/button-down.mp3');
+  const buttonUpSound = useAudioEffect('audio/button-up.mp3');
   const { isSpeakerAllowed, setIsSpeakerAllowed } = useSpeakerContext();
   const format = isOggCompatible ? 'ogg' : 'mp3';
   const prevMusicAudio = useRef<HTMLAudioElement | null>(null);
-  const musicAudio = useAudio(`${src}.${format}`);
+  const musicAudio = useAudioEffect(`${src}.${format}`, true);
 
   const pressedButton = 'scale-[0.99] shadow-player-button';
   const playButtonStyles = isPlaying
@@ -140,7 +140,7 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
     return () => {
       audioElement?.removeEventListener('loadedmetadata', handleAudioDuration);
     };
-  }, [musicAudio, isSpeakerAllowed, volume]);
+  }, [musicAudio, isSpeakerAllowed, volume, isPlaying]);
 
   useEffect(() => {
     if (prevMusicAudio.current) {
