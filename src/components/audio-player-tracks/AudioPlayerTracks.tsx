@@ -16,10 +16,12 @@ export const AudioPlayerTracks: FC<Props> = ({
       {tracks.map((track, index) => (
         <li key={track}>
           <button
-            className={`${index === indexActive ? 'bg-pink-500' : ''} w-full border-b border-pink-500 px-5 py-1`}
+            className={`${index === indexActive ? 'bg-pink-500' : ''} group w-full border-b border-pink-500 px-5 py-1`}
             onClick={() => selectTrack(index)}
           >
-            {track}
+            <span className="inline-block transition-all group-hover:scale-125">
+              {track}
+            </span>
           </button>
         </li>
       ))}
