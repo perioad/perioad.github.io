@@ -3,10 +3,13 @@ import { Avatar } from '../../components/avatar/Avatar';
 import { CustomLink } from '../../components/custom-link/CustomLink';
 import { Emphasize } from '../../components/emphasize/Emphasize';
 import { Section } from '../../components/section/Section';
+import { Bubble } from '../../components/bubble/Bubble';
 
 export const General = memo(function General() {
   return (
     <Section>
+      <Bubble />
+
       <div className=" flex flex-col items-center gap-5">
         <div className="flex flex-col gap-2 sm:gap-5">
           <h1 className="text-3xl font-bold sm:text-5xl">

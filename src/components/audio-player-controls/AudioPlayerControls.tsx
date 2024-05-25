@@ -40,7 +40,7 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
   const currentTimeFormatted = formatDuration(currentTime);
   const durationFormatted = formatDuration(duration);
   const playButtonTitle = isPlaying ? 'Pause audio' : 'Play audio';
-  const muteButtonTitle = isSpeakerAllowed ? 'Mute audio' : 'Unmute audio';
+  const muteButtonTitle = isSpeakerAllowed ? 'Mute music' : 'Unmute music';
 
   function handlePlayAudio() {
     buttonDownSound.current?.play();

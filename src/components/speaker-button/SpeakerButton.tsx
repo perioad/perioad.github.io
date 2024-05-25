@@ -17,7 +17,9 @@ export const SpeakerButton = () => {
   const speakerOffIconTranslateY = isSpeakerAllowed
     ? '-translate-y-1/2'
     : '-translate-y-[200%]';
-  const title = isSpeakerAllowed ? 'Mute audio' : 'Unmute audio';
+  const title = isSpeakerAllowed
+    ? 'Mute audio effects'
+    : 'Unmute audio effects';
 
   function handleToggleSpeaker() {
     if (!isSpeakerAllowed) {

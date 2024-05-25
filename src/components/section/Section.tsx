@@ -10,7 +10,7 @@ export const Section = forwardRef<HTMLElement, PropsWithChildren<Props>>(
       <section
         id={id}
         ref={ref}
-        className="flex min-h-screen flex-grow flex-col pt-16"
+        className="relative flex min-h-screen flex-grow flex-col pt-16"
       >
         {children}
       </section>
