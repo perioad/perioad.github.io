@@ -11,7 +11,7 @@ export const MixingContent = memo(function MixingContent() {
         mix
       </p>
 
-      <p>give a shot to a track in my collection:</p>
+      <p>give a shot to any of my mixes:</p>
 
       <AudioPlayer />
     </div>
