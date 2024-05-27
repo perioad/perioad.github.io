@@ -19,6 +19,8 @@ export const LazySection: FC<PropsWithChildren<Props>> = ({ id, children }) => {
 
   return (
     <Section ref={sectionRef} id={id}>
+      {!isIntersected && <Loader />}
+
       {isIntersected && <Suspense fallback={<Loader />}>{children}</Suspense>}
     </Section>
   );
