@@ -8,6 +8,7 @@ import { useAudioEffect } from '../../hooks/useAudioEffect';
 import { useBgAnimationContext } from '../../context/BgAnimationContext';
 import { useSpeakerContext } from '../../context/SpeakerContext';
 import { useIsOggCompatible } from '../../hooks/useIsOggCompatible';
+import { Spinner } from '../spinner/Spinner';
 
 type Props = {
   src: string;
@@ -18,7 +19,7 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
   const volumeRangeRef = useRef<HTMLInputElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
+  const [duration, setDuration] = useState<number | null>(null);
   const [volume, setVolume] = useState(100);
   const isIos = useIsIos();
   const isOggCompatible = useIsOggCompatible();
@@ -38,7 +39,7 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
     ? 'bg-red-500'
     : `${pressedButton} bg-green-500`;
   const currentTimeFormatted = formatDuration(currentTime);
-  const durationFormatted = formatDuration(duration);
+  const durationFormatted = duration === null ? '0' : formatDuration(duration);
   const playButtonTitle = isPlaying ? 'Pause audio' : 'Play audio';
   const muteButtonTitle = isSpeakerAllowed ? 'Mute music' : 'Unmute music';
 
@@ -99,6 +100,8 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
       return;
     }
 
+    setDuration(null);
+
     function handleAudioEnd() {
       setIsPlaying(false);
       setCurrentTime(0);
@@ -151,6 +154,15 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
     prevMusicAudio.current = musicAudio.current;
   }, [musicAudio]);
 
+  const durationElement =
+    duration === null ? (
+      <div className="h-8 w-8">
+        <Spinner />
+      </div>
+    ) : (
+      <span>{durationFormatted}</span>
+    );
+
   return (
     <>
       <button
@@ -165,14 +177,15 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
       <div className="flex flex-col gap-7">
         <p className=" flex justify-between">
           <span>{currentTimeFormatted}</span>
-          <span>{durationFormatted}</span>
+
+          {durationElement}
         </p>
 
         <input
           type="range"
           className={css.rangeInput}
           ref={durationRangeRef}
-          max={duration}
+          max={duration || 0}
           value={currentTime}
           onInput={handleDurationSliderChange}
           title="Change audio duration"
