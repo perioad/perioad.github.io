@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { useIsWaving } from '../../hooks/useIsWaving';
 import { AvatarVideo } from '../avatar-video/AvatarVideo';
 import { Spinner } from '../spinner/Spinner';
+import { WavingProps } from './Waving.model';
 
-export const Waving = () => {
+export const Waving: FC<WavingProps> = ({ onReady }) => {
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(
     null,
   );
@@ -15,6 +16,12 @@ export const Waving = () => {
   const isCameraDenied = isAccessGranted === false;
   const messageClassName =
     ' w-3/4 mx-2 mt-5 text-center absolute left-1/2 transform -translate-x-1/2 bottom-5 dark:bg-zinc-900 bg-white animate-appear';
+
+  useEffect(() => {
+    if (isInteractionReady || isCameraDenied) {
+      onReady();
+    }
+  }, [isInteractionReady, isCameraDenied, onReady]);
 
   return (
     <>
