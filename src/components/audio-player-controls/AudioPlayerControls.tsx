@@ -5,7 +5,7 @@ import { throttle } from 'lodash-es';
 import css from './AudioPlayerControls.module.css';
 import { useIsIos } from '../../hooks/useIsIos';
 import { useAudioEffect } from '../../hooks/useAudioEffect';
-import { useBgAnimationContext } from '../../context/BgAnimationContext';
+import { usePlayStateContext } from '../../context/PlayStateContext';
 import { useSpeakerContext } from '../../context/SpeakerContext';
 import { useIsOggCompatible } from '../../hooks/useIsOggCompatible';
 import { Spinner } from '../spinner/Spinner';
@@ -17,13 +17,12 @@ type Props = {
 export const AudioPlayerControls: FC<Props> = ({ src }) => {
   const durationRangeRef = useRef<HTMLInputElement>(null);
   const volumeRangeRef = useRef<HTMLInputElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const { isPlaying, setIsPlaying } = usePlayStateContext();
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState<number | null>(null);
   const [volume, setVolume] = useState(100);
   const isIos = useIsIos();
   const isOggCompatible = useIsOggCompatible();
-  const { toggleBgAnimationState } = useBgAnimationContext();
   const buttonDownSound = useAudioEffect('audio/button-down.mp3');
   const buttonUpSound = useAudioEffect('audio/button-up.mp3');
   const { isSpeakerAllowed, setIsSpeakerAllowed } = useSpeakerContext();
@@ -38,6 +37,8 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
   const muteButtonColor = isSpeakerAllowed
     ? 'bg-red-500'
     : `${pressedButton} bg-green-500`;
+  const animationIfPlayingWhileMuted =
+    isPlaying && !isSpeakerAllowed ? 'animate-bounce' : '';
   const currentTimeFormatted = formatDuration(currentTime);
   const durationFormatted = duration === null ? '0' : formatDuration(duration);
   const playButtonTitle = isPlaying ? 'Pause audio' : 'Play audio';
@@ -47,14 +48,12 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
     buttonDownSound.current?.play();
     musicAudio.current?.play();
     setIsPlaying(true);
-    toggleBgAnimationState();
   }
 
   function handlePauseAudio() {
     buttonUpSound.current?.play();
     musicAudio.current?.pause();
     setIsPlaying(false);
-    toggleBgAnimationState();
   }
 
   function handleMute() {
@@ -143,7 +142,7 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
     return () => {
       audioElement?.removeEventListener('loadedmetadata', handleAudioDuration);
     };
-  }, [musicAudio, isSpeakerAllowed, volume, isPlaying]);
+  }, [musicAudio, isSpeakerAllowed, volume, isPlaying, setIsPlaying]);
 
   useEffect(() => {
     if (prevMusicAudio.current) {
@@ -210,7 +209,7 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
         )}
 
         <button
-          className={` px-2 py-1 text-2xl transition-colors dark:text-zinc-900 ${muteButtonColor} hover:text-white`}
+          className={`${muteButtonColor} ${animationIfPlayingWhileMuted} px-2 py-1 text-2xl transition-colors hover:text-white dark:text-zinc-900`}
           onClick={handleMute}
           title={muteButtonTitle}
           aria-label={muteButtonTitle}

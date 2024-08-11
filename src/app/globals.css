@@ -12,3 +12,13 @@
     text-wrap: balance;
   }
 }
+
+.markdown {
+  > *:not(:last-child) {
+    margin-bottom: 12px;
+  }
+
+  code {
+    border-radius: 6px;
+  }
+}

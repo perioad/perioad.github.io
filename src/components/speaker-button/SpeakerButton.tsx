@@ -1,5 +1,6 @@
 'use client';
 
+import { usePlayStateContext } from '../../context/PlayStateContext';
 import { useSpeakerContext } from '../../context/SpeakerContext';
 import { useAudioEffect } from '../../hooks/useAudioEffect';
 import { SpeakerOffIcon } from '../../icons/SpeakerOffIcon';
@@ -7,6 +8,7 @@ import { SpeakerOnIcon } from '../../icons/SpeakerOnIcon';
 
 export const SpeakerButton = () => {
   const { isSpeakerAllowed, setIsSpeakerAllowed } = useSpeakerContext();
+  const { isPlaying } = usePlayStateContext();
   const badumSound = useAudioEffect('audio/badum.mp3');
 
   const shouldShowSpeakerButton = isSpeakerAllowed !== null;
@@ -20,6 +22,8 @@ export const SpeakerButton = () => {
   const title = isSpeakerAllowed
     ? 'Mute audio effects'
     : 'Unmute audio effects';
+  const animationIfPlayingWhileMuted =
+    isPlaying && !isSpeakerAllowed ? 'animate-bounce' : '';
 
   function handleToggleSpeaker() {
     if (!isSpeakerAllowed) {
@@ -35,7 +39,7 @@ export const SpeakerButton = () => {
 
   return (
     <button
-      className={`relative h-8 w-8 overflow-hidden bg-pink-500 text-white hover:text-zinc-900 sm:h-10 sm:w-10 dark:text-zinc-900 dark:hover:text-white`}
+      className={`${animationIfPlayingWhileMuted} relative h-8 w-8 overflow-hidden bg-pink-500 text-white hover:text-zinc-900 sm:h-10 sm:w-10 dark:text-zinc-900 dark:hover:text-white`}
       title={title}
       aria-label={title}
       onClick={handleToggleSpeaker}
