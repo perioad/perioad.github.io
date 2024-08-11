@@ -20,11 +20,11 @@ export default function AskKeyModal({
 
   return (
     <>
-      <div className="absolute left-0 top-0 h-full w-full bg-black/50"></div>
+      <div className="absolute left-0 top-0 z-50 h-full w-full bg-black/50"></div>
 
       <dialog
         open
-        className="absolute left-1/2 top-1/2 m-0 flex w-full -translate-x-1/2 -translate-y-1/2 flex-col gap-3 rounded-md p-5 sm:w-auto dark:bg-slate-900 dark:text-slate-100"
+        className="absolute left-1/2 top-1/2 z-50 m-0 flex w-full -translate-x-1/2 -translate-y-1/2 flex-col gap-3 rounded-md p-5 sm:w-auto dark:bg-slate-900 dark:text-slate-100"
       >
         <header>
           <h1 className="mb-3 text-xl">insert your openai api key</h1>
