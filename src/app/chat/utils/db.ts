@@ -1,7 +1,7 @@
 import { IDBPDatabase, openDB } from 'idb';
 import { HistoryRecord, Prompt } from '../models/db';
 
-const CHAT_DB_NAME = 'byok';
+const CHAT_DB_NAME = 'chat';
 const HISTORY_STORE_NAME = 'history';
 const PROMPT_STORE_NAME = 'prompts';
 
