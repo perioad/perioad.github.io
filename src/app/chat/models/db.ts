@@ -5,3 +5,9 @@ export type HistoryRecord = {
   title: string;
   messages: Message[];
 };
+
+export interface Prompt {
+  id?: number;
+  title: string;
+  content: string;
+}

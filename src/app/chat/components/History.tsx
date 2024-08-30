@@ -28,7 +28,7 @@ export default function History({
 }) {
   return (
     <aside
-      className={`${isVisible ? 'w-full sm:w-48' : 'w-0'} h-full flex-shrink-0 overflow-y-auto border-r border-r-slate-800 text-base transition-all sm:text-sm`}
+      className={`${isVisible ? 'w-full sm:w-56' : 'w-0'} h-full flex-shrink-0 overflow-y-auto border-r border-r-slate-800 text-base transition-all sm:text-sm`}
     >
       <ul className="flex flex-col gap-3 p-3">
         {history.map((chat: History) => (

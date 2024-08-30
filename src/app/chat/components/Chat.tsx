@@ -5,10 +5,17 @@ import ChatInput from './ChatInput';
 import History from './History';
 import Messages from './Messages';
 import { getAiTitle } from '../utils/getAiTitle';
-import { getHistoryDB, getHistoryTransaction } from '../utils/db';
+import {
+  getHistoryDB,
+  getHistoryTransaction,
+  getPromptsDB,
+  getPromptTransaction,
+} from '../utils/db';
 import { HistoryRecord } from '../models/db';
 import { Message } from '../models/chat';
 import { ChatModel } from 'openai/resources/index.mjs';
+import PromptSidebar from './PromptSidebar';
+import { Prompt } from '../models/db';
 
 const MAX_MOBILE_WIDTH = 640;
 
@@ -17,6 +24,9 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
   const [currentChatId, setCurrentChatId] = useState<number>(1);
   const [isHistoryVisible, setIsHistoryVisible] = useState(false);
   const [model, setModel] = useState<ChatModel>('gpt-4o');
+  const [isPromptSidebarVisible, setIsPromptSidebarVisible] = useState(false);
+  const [prompts, setPrompts] = useState<Prompt[]>([]);
+  const [chosenPrompt, setChosenPrompt] = useState<Prompt | null>(null);
 
   const currentHistory = useMemo(
     () => history.find(({ id }) => id === currentChatId),
@@ -37,6 +47,16 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     };
 
     fetchHistory();
+  }, []);
+
+  useEffect(() => {
+    const fetchPrompts = async () => {
+      const savedPrompts = await getPromptsDB();
+
+      setPrompts(savedPrompts);
+    };
+
+    fetchPrompts();
   }, []);
 
   const addNewMessage = async (content: string, role: 'user' | 'assistant') => {
@@ -92,6 +112,25 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     setIsHistoryVisible((prev) => !prev);
   }
 
+  function togglePromptSidebar() {
+    setIsPromptSidebarVisible((prev) => !prev);
+  }
+
+  const addPrompt = async (title: string, content: string) => {
+    const newPrompt: Prompt = { title, content };
+    const tx = await getPromptTransaction();
+
+    await Promise.all([tx.store.add(newPrompt), tx.done]);
+
+    const updatedPrompts = await getPromptsDB();
+
+    setPrompts(updatedPrompts);
+  };
+
+  function choosePrompt(prompt: Prompt) {
+    setChosenPrompt(prompt);
+  }
+
   return (
     <>
       <header className="flex items-center justify-between border-b border-slate-800 px-5 py-3">
@@ -101,22 +140,32 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
         >
           {'⇨'}
         </button>
-        <p>byok - bring your own key</p>
-        <div className="flex gap-5">
+
+        <div className="flex items-center gap-5">
           <button
-            className="rounded-md border px-3 py-1 transition-all hover:bg-slate-800 "
+            className="rounded-md bg-slate-800 px-3 py-1 transition-all hover:scale-105 "
             onClick={openKeyModal}
           >
             key
           </button>
+
+          <p>byok - bring your own key</p>
+
           <button
-            className="rounded-md border px-3 py-1 transition-all hover:bg-slate-800 aria-disabled:grayscale "
+            className="rounded-md bg-slate-800 px-3 py-1 transition-all hover:scale-105 aria-disabled:grayscale "
             onClick={startNewChat}
             aria-disabled={!currentHistory}
           >
             new
           </button>
         </div>
+
+        <button
+          onClick={togglePromptSidebar}
+          className={`${isPromptSidebarVisible ? '-scale-x-100' : ''} text-2xl transition-all`}
+        >
+          {'⇦'}
+        </button>
       </header>
       <section className="flex flex-grow overflow-y-auto">
         <History
@@ -129,7 +178,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
         <div
           className={`${isHistoryVisible ? 'hidden sm:flex' : ''} flex h-full flex-grow flex-col`}
         >
-          <div className="mt-5 flex justify-center">
+          <div className="z-10 flex justify-center py-5 backdrop-blur-sm">
             <select
               className="rounded-md bg-slate-800 px-2 py-1"
               value={model}
@@ -144,8 +193,18 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
             addNewMessage={addNewMessage}
             model={model}
           />
-          <ChatInput addNewMessage={addNewMessage} />
+          <ChatInput
+            addNewMessage={addNewMessage}
+            chosenPrompt={chosenPrompt}
+          />
         </div>
+
+        <PromptSidebar
+          isVisible={isPromptSidebarVisible}
+          prompts={prompts}
+          addPrompt={addPrompt}
+          choosePrompt={choosePrompt}
+        />
       </section>
     </>
   );

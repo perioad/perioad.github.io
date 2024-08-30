@@ -1,8 +1,40 @@
-import { ChangeEvent, useRef, useState } from 'react';
+import { ChangeEvent, useRef, useState, useEffect } from 'react';
+import { Prompt } from '../models/db';
 
-export default function ChatInput({ addNewMessage }: { addNewMessage: any }) {
+interface ChatInputProps {
+  addNewMessage: (content: string, role: 'user' | 'assistant') => Promise<void>;
+  chosenPrompt: Prompt | null;
+}
+
+export default function ChatInput({
+  addNewMessage,
+  chosenPrompt,
+}: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [prompt, setPrompt] = useState('');
+
+  const adjustTextareaHeight = () => {
+    if (textareaRef.current) {
+      const maxHeight = 200;
+      textareaRef.current.style.height = 'auto';
+      const scrollHeight = textareaRef.current.scrollHeight;
+      const newHeight = Math.min(scrollHeight, maxHeight);
+      textareaRef.current.style.height = `${newHeight}px`;
+    }
+  };
+
+  useEffect(() => {
+    if (chosenPrompt) {
+      const value =
+        prompt.length === 0
+          ? chosenPrompt.content
+          : `${chosenPrompt.content}\n\n${prompt}`;
+
+      setPrompt(value);
+
+      setTimeout(adjustTextareaHeight, 0);
+    }
+  }, [chosenPrompt]);
 
   const promptTrimmed = prompt.trim();
   const isEmptyPrompt = promptTrimmed.length === 0;
@@ -13,17 +45,7 @@ export default function ChatInput({ addNewMessage }: { addNewMessage: any }) {
     const value: string = event.target.value;
 
     setPrompt(value);
-
-    if (textareaRef.current) {
-      const maxHeight = 200;
-      const oneLineHeight = 24;
-      const firstLine = 1;
-      const textLinesToAdd = value.split('\n').length - firstLine;
-      const newHeight = textLinesToAdd * oneLineHeight + minHeight;
-
-      textareaRef.current.style.height =
-        newHeight > maxHeight ? `${maxHeight}px` : `${newHeight}px`;
-    }
+    adjustTextareaHeight();
   }
 
   function handleSubmit(prompt: string) {

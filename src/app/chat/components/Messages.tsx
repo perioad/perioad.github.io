@@ -47,7 +47,7 @@ export default function Messages({
   return (
     <div
       ref={containerRef}
-      className="mx-auto w-full flex-grow overflow-y-auto px-1 py-5 sm:px-5"
+      className="relative -top-10 mx-auto w-full flex-grow overflow-y-auto px-1 pb-5 pt-10 sm:px-5"
     >
       <div className="mx-auto w-full max-w-3xl text-base sm:text-sm">
         {messages.map((message, i) => (

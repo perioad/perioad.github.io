@@ -20,7 +20,7 @@ export async function getAiTitle(content: string) {
     messages: [
       {
         role: 'user',
-        content: `Create a chat title in maximum 3 words based on this text without any symbols and without articles: ${content}`,
+        content: `Create a chat title in maximum 5 words based on this text without any symbols and without articles: ${content}`,
       },
     ],
   });
