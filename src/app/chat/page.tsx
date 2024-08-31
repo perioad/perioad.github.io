@@ -41,7 +41,7 @@ export default function ChatPage() {
     <main
       className={`${font.className} w-dvh relative flex h-dvh flex-col text-sm`}
     >
-      {isKeyModalDisplayed && <AskKeyModal closeModal={closeModal} />}
+      <AskKeyModal closeModal={closeModal} isOpen={isKeyModalDisplayed} />
 
       <Chat openKeyModal={openKeyModal} />
     </main>

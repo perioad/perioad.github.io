@@ -1,5 +1,6 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { Prompt } from '../models/db';
+import Modal from '../../components/Modal';
 
 interface PromptSidebarProps {
   isVisible: boolean;
@@ -16,11 +17,11 @@ export default function PromptSidebar({
 }: PromptSidebarProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleAddPrompt = () => {
-    addPrompt(title, content);
-    dialogRef.current?.close();
+    addPrompt(title.trim(), content.trim());
+    setIsModalOpen(false);
     setTitle('');
     setContent('');
   };
@@ -32,7 +33,7 @@ export default function PromptSidebar({
       <ul className="flex flex-col gap-3 p-3">
         <button
           className="h-auto w-full items-stretch overflow-hidden overflow-ellipsis whitespace-nowrap rounded-md px-2 py-3 text-2xl transition-all hover:scale-105 sm:h-9 sm:py-0 dark:bg-slate-600 "
-          onClick={() => dialogRef.current?.showModal()}
+          onClick={() => setIsModalOpen(true)}
         >
           +
         </button>
@@ -43,7 +44,7 @@ export default function PromptSidebar({
             className={`group flex h-auto w-full items-stretch overflow-hidden overflow-ellipsis whitespace-nowrap rounded-md px-2 py-3 transition-all hover:scale-105 sm:h-9 sm:py-0 dark:bg-slate-800`}
           >
             <button
-              className={` w-full overflow-hidden overflow-ellipsis whitespace-nowrap`}
+              className={`w-full overflow-hidden overflow-ellipsis whitespace-nowrap`}
               title={prompt.title}
               onClick={() => {
                 choosePrompt({ ...prompt });
@@ -55,34 +56,32 @@ export default function PromptSidebar({
         ))}
       </ul>
 
-      <dialog
-        ref={dialogRef}
-        className="w-96 rounded-lg bg-slate-800 p-6 backdrop:bg-black backdrop:bg-opacity-50"
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Add Prompt"
       >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold">Add Prompt</h2>
-          <button onClick={() => dialogRef.current?.close()}>✕</button>
-        </div>
         <input
           className="mb-4 w-full rounded bg-slate-700 p-2"
           placeholder="Title"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => setTitle(e.target.value.trim())}
         />
         <textarea
           className="mb-4 w-full rounded bg-slate-700 p-2"
           placeholder="Prompt"
           value={content}
-          onChange={(e) => setContent(e.target.value)}
           rows={4}
+          onChange={(e) => setContent(e.target.value.trim())}
         />
         <button
-          className="w-full rounded bg-slate-600 px-4 py-2 text-white"
+          className="w-full rounded bg-slate-600 px-4 py-2 text-white transition-all hover:bg-slate-700 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
           onClick={handleAddPrompt}
+          aria-disabled={!title.trim() || !content.trim()}
         >
           Add
         </button>
-      </dialog>
+      </Modal>
     </aside>
   );
 }
