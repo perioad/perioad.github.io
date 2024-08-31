@@ -13,12 +13,16 @@ const useAiStream = (
     if (!shouldRequest) return;
 
     const fetchApiKey = () => {
+      if (typeof window === 'undefined') return;
+
       const apiKey = localStorage.getItem('key');
+
       if (!apiKey) {
         alert(
           'There is no OpenAI API key. Add it by pressing the key button in the header.',
         );
-        throw new Error('API key missing');
+
+        return '';
       }
       return apiKey;
     };
