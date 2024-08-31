@@ -26,6 +26,12 @@ export default function History({
   currentChatId: number;
   isVisible: boolean;
 }) {
+  function handleRemoveChat(chat: History) {
+    if (confirm(`are you sure you want to remove "${chat.title}" chat?`)) {
+      removeChat(chat.id);
+    }
+  }
+
   return (
     <aside
       className={`${isVisible ? 'w-full sm:w-56' : 'w-0'} h-full flex-shrink-0 overflow-y-auto border-r border-r-slate-800 text-base transition-all sm:text-sm`}
@@ -47,7 +53,7 @@ export default function History({
             <button
               className="w-9 flex-shrink-0 text-3xl transition-all hover:scale-125 sm:w-0 sm:text-sm sm:opacity-0 sm:focus-visible:w-9 sm:focus-visible:opacity-100 sm:group-hover:w-9 sm:group-hover:opacity-100"
               title={`Remove chat: ${chat.title}`}
-              onClick={() => removeChat(chat.id)}
+              onClick={() => handleRemoveChat(chat)}
             >
               🚽
             </button>
