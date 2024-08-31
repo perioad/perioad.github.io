@@ -137,6 +137,30 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     setPrompts(updatedPrompts);
   };
 
+  const updatePrompt = async (id: number, title: string, content: string) => {
+    const tx = await getPromptTransaction();
+    const existingPrompt = await tx.store.get(id);
+
+    if (existingPrompt) {
+      await Promise.all([
+        tx.store.put({ ...existingPrompt, title, content }),
+        tx.done,
+      ]);
+
+      const updatedPrompts = await getPromptsDB();
+      setPrompts(updatedPrompts);
+    }
+  };
+
+  const removePrompt = async (id: number) => {
+    const tx = await getPromptTransaction();
+
+    await Promise.all([tx.store.delete(id), tx.done]);
+
+    const updatedPrompts = await getPromptsDB();
+    setPrompts(updatedPrompts);
+  };
+
   function choosePrompt(prompt: Prompt) {
     setChosenPrompt(prompt);
   }
@@ -166,20 +190,20 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
 
         <div className="flex items-center gap-5">
           <button
-            className="rounded-md bg-slate-800 px-3 py-1 transition-all hover:scale-105 "
+            className="rounded-md bg-slate-700 px-3 py-1 transition-all hover:bg-slate-800"
             onClick={openKeyModal}
           >
-            key
+            manage key
           </button>
 
           <p>byok - bring your own key</p>
 
           <button
-            className="rounded-md bg-slate-800 px-3 py-1 transition-all hover:scale-105 aria-disabled:grayscale "
+            className="rounded-md bg-slate-700 px-3 py-1 transition-all hover:bg-slate-800"
             onClick={startNewChat}
             aria-disabled={!currentHistory}
           >
-            new
+            new chat
           </button>
         </div>
 
@@ -205,7 +229,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
         >
           <div className="z-10 flex justify-center py-5 backdrop-blur-sm">
             <select
-              className="cursor-pointer rounded-md bg-slate-800 px-2 py-1"
+              className="cursor-pointer rounded-md bg-slate-700 px-2 py-1 transition-all hover:bg-slate-800"
               value={model}
               onChange={(e) => setModel(e.target.value as ChatModel)}
             >
@@ -228,6 +252,8 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
           isVisible={isPromptSidebarVisible}
           prompts={prompts}
           addPrompt={addPrompt}
+          updatePrompt={updatePrompt}
+          removePrompt={removePrompt}
           choosePrompt={choosePrompt}
         />
       </section>

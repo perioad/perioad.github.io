@@ -30,9 +30,9 @@ export default function AskKeyModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={closeModal} title="Insert your OpenAI key">
-      <p className="mb-3">
-        *it&apos;s stored only in localstorage on your device
+    <Modal isOpen={isOpen} onClose={closeModal} title="insert your openai key">
+      <p className="mb-3 underline decoration-green-300 decoration-double underline-offset-8">
+        it&apos;s stored only in localstorage on your device
       </p>
       <label className="mb-3 block" htmlFor="apikey">
         api key:
@@ -49,7 +49,7 @@ export default function AskKeyModal({
       <div className="mt-3 flex gap-2">
         {keyValue && (
           <button
-            className="flex-1 rounded-md bg-red-600 p-2 transition-all hover:bg-red-700 aria-disabled:cursor-not-allowed"
+            className="flex-1 cursor-pointer rounded-md bg-red-600 p-2 transition-all hover:bg-red-700 aria-disabled:cursor-not-allowed"
             onClick={removeKey}
           >
             remove
@@ -57,7 +57,7 @@ export default function AskKeyModal({
         )}
 
         <button
-          className="flex-1 rounded-md bg-green-600 p-2 transition-all hover:bg-green-700 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+          className="flex-1 cursor-pointer rounded-md bg-green-600 p-2 transition-all hover:bg-green-700 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
           aria-disabled={!keyValue}
           onClick={updateKey}
         >
