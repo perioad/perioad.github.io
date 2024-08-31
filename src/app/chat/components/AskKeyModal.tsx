@@ -69,7 +69,8 @@ export default function AskKeyModal({
         </main>
 
         <button
-          className="w-full rounded-md bg-green-600 p-2 transition-all hover:bg-green-700"
+          className="w-full rounded-md bg-green-600 p-2 transition-all hover:bg-green-700 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+          aria-disabled={!keyValue}
           onClick={updateKey}
         >
           Add

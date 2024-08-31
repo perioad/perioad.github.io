@@ -157,9 +157,11 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
       <header className="flex items-center justify-between border-b border-slate-800 px-5 py-3">
         <button
           onClick={toggleHistory}
-          className={`${isHistoryVisible && '-scale-x-100'} text-2xl transition-all`}
+          className={`${isHistoryVisible ? '-scale-x-100' : ''} flex items-center gap-2 text-2xl transition-all`}
         >
           {'⇨'}
+
+          <span className="text-sm transition-all">history</span>
         </button>
 
         <div className="flex items-center gap-5">
@@ -183,8 +185,10 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
 
         <button
           onClick={togglePromptSidebar}
-          className={`${isPromptSidebarVisible ? '-scale-x-100' : ''} text-2xl transition-all`}
+          className={`${isPromptSidebarVisible ? '-scale-x-100' : ''} flex items-center gap-2 text-2xl transition-all`}
         >
+          <span className="text-sm transition-all">prompts</span>
+
           {'⇦'}
         </button>
       </header>
@@ -201,7 +205,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
         >
           <div className="z-10 flex justify-center py-5 backdrop-blur-sm">
             <select
-              className="rounded-md bg-slate-800 px-2 py-1"
+              className="cursor-pointer rounded-md bg-slate-800 px-2 py-1"
               value={model}
               onChange={(e) => setModel(e.target.value as ChatModel)}
             >
