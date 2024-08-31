@@ -22,9 +22,19 @@ const MAX_MOBILE_WIDTH = 640;
 export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [currentChatId, setCurrentChatId] = useState<number>(1);
-  const [isHistoryVisible, setIsHistoryVisible] = useState(false);
+  const [isHistoryVisible, setIsHistoryVisible] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('isHistoryVisible') === 'true';
+    }
+    return false;
+  });
   const [model, setModel] = useState<ChatModel>('gpt-4o');
-  const [isPromptSidebarVisible, setIsPromptSidebarVisible] = useState(false);
+  const [isPromptSidebarVisible, setIsPromptSidebarVisible] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('isPromptSidebarVisible') === 'true';
+    }
+    return false;
+  });
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [chosenPrompt, setChosenPrompt] = useState<Prompt | null>(null);
 
@@ -130,6 +140,17 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
   function choosePrompt(prompt: Prompt) {
     setChosenPrompt(prompt);
   }
+
+  useEffect(() => {
+    localStorage.setItem('isHistoryVisible', isHistoryVisible.toString());
+  }, [isHistoryVisible]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      'isPromptSidebarVisible',
+      isPromptSidebarVisible.toString(),
+    );
+  }, [isPromptSidebarVisible]);
 
   return (
     <>
