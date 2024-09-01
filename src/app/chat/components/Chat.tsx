@@ -37,6 +37,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
   });
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [chosenPrompt, setChosenPrompt] = useState<Prompt | null>(null);
+  const [shouldFocusInput, setShouldFocusInput] = useState(false);
 
   const currentHistory = useMemo(
     () => history.find(({ id }) => id === currentChatId),
@@ -97,6 +98,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     const allHistory = await getHistoryDB();
 
     setCurrentChatId(allHistory.at(-1)?.id + 1 ?? 1);
+    setShouldFocusInput(true);
   };
 
   const removeChat = async (id: number) => {
@@ -112,6 +114,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
 
   const selectChat = (id: number) => {
     setCurrentChatId(id);
+    setShouldFocusInput(true);
 
     if (window.innerWidth < MAX_MOBILE_WIDTH) {
       setIsHistoryVisible(false);
@@ -163,6 +166,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
 
   function choosePrompt(prompt: Prompt) {
     setChosenPrompt(prompt);
+    setShouldFocusInput(true);
   }
 
   useEffect(() => {
@@ -245,6 +249,8 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
           <ChatInput
             addNewMessage={addNewMessage}
             chosenPrompt={chosenPrompt}
+            shouldFocus={shouldFocusInput}
+            onFocused={() => setShouldFocusInput(false)}
           />
         </div>
 

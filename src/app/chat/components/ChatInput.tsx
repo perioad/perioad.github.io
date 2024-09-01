@@ -4,11 +4,15 @@ import { Prompt } from '../models/db';
 interface ChatInputProps {
   addNewMessage: (content: string, role: 'user' | 'assistant') => Promise<void>;
   chosenPrompt: Prompt | null;
+  shouldFocus: boolean;
+  onFocused: () => void;
 }
 
 export default function ChatInput({
   addNewMessage,
   chosenPrompt,
+  shouldFocus,
+  onFocused,
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [prompt, setPrompt] = useState('');
@@ -27,12 +31,18 @@ export default function ChatInput({
     if (chosenPrompt) {
       const value =
         prompt.length === 0
-          ? chosenPrompt.content
-          : `${chosenPrompt.content}\n\n${prompt}`;
+          ? `${chosenPrompt.content}\n`
+          : `${chosenPrompt.content}\n${prompt}`;
 
       setPrompt(value);
 
-      setTimeout(adjustTextareaHeight, 0);
+      setTimeout(() => {
+        adjustTextareaHeight();
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+          textareaRef.current.setSelectionRange(value.length, value.length);
+        }
+      }, 0);
     }
   }, [chosenPrompt]);
 
@@ -61,6 +71,13 @@ export default function ChatInput({
       textareaRef.current.focus();
     }
   }
+
+  useEffect(() => {
+    if (shouldFocus && textareaRef.current) {
+      textareaRef.current.focus();
+      onFocused();
+    }
+  }, [shouldFocus, onFocused]);
 
   return (
     <div className="mx-auto flex w-full max-w-4xl p-5 pt-0">
