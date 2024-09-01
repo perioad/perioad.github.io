@@ -106,13 +106,13 @@ export default function PromptSidebar({
       >
         <input
           className="mb-4 w-full rounded bg-slate-700 p-2"
-          placeholder="title"
+          placeholder="gordon ramsay"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
         <textarea
           className="mb-4 w-full rounded bg-slate-700 p-2"
-          placeholder="prompt"
+          placeholder="you're gordon ramsay. teach me how to cook lasagna. pls don't scream"
           value={content}
           rows={4}
           onChange={(e) => setContent(e.target.value)}
