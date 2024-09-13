@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import AskKeyModal from './components/AskKeyModal';
 import Chat from './components/Chat';
 import { Source_Code_Pro } from 'next/font/google';
+import { Spinner } from '../../components/spinner/Spinner';
 
 const font = Source_Code_Pro({ weight: '400', subsets: ['latin'] });
 
@@ -32,7 +33,9 @@ export default function ChatPage() {
   if (!isInitialized) {
     return (
       <main className="w-dvh flex h-dvh items-center justify-center">
-        <p className=" animate-spin text-4xl">⏳</p>
+        <div className="h-20 w-20">
+          <Spinner />
+        </div>
       </main>
     );
   }
