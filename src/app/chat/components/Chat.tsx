@@ -16,8 +16,19 @@ import { Message } from '../models/chat';
 import { ChatModel } from 'openai/resources/index.mjs';
 import PromptSidebar from './PromptSidebar';
 import { Prompt } from '../models/db';
+import ModelSelect from './ModelSelect'; // Add this import
 
 const MAX_MOBILE_WIDTH = 640;
+
+function getModelFromLocalStorage(): ChatModel {
+  if (typeof window === 'undefined') return 'gpt-4o';
+
+  const savedModel = localStorage.getItem('model');
+
+  if (!savedModel) return 'gpt-4o';
+
+  return savedModel as ChatModel;
+}
 
 export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
   const [history, setHistory] = useState<HistoryRecord[]>([]);
@@ -28,7 +39,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     }
     return false;
   });
-  const [model, setModel] = useState<ChatModel>('gpt-4o');
+  const [model, setModel] = useState<ChatModel>(getModelFromLocalStorage);
   const [isPromptSidebarVisible, setIsPromptSidebarVisible] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('isPromptSidebarVisible') === 'true';
@@ -169,6 +180,10 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     setShouldFocusInput(true);
   }
 
+  function handleSelectModel(model: ChatModel) {
+    setModel(model);
+  }
+
   useEffect(() => {
     localStorage.setItem('isHistoryVisible', isHistoryVisible.toString());
   }, [isHistoryVisible]);
@@ -192,24 +207,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
           <span className="text-sm transition-all">history</span>
         </button>
 
-        <div className="flex items-center gap-5">
-          <button
-            className="rounded-md bg-slate-700 px-3 py-1 transition-all hover:bg-slate-800"
-            onClick={openKeyModal}
-          >
-            manage key
-          </button>
-
-          <p>byok - bring your own key</p>
-
-          <button
-            className="rounded-md bg-slate-700 px-3 py-1 transition-all hover:bg-slate-800"
-            onClick={startNewChat}
-            aria-disabled={!currentHistory}
-          >
-            new chat
-          </button>
-        </div>
+        <p>byok - bring your own key</p>
 
         <button
           onClick={togglePromptSidebar}
@@ -231,15 +229,23 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
         <div
           className={`${isHistoryVisible ? 'hidden sm:flex' : ''} flex h-full flex-grow flex-col`}
         >
-          <div className="z-10 flex justify-center py-5 backdrop-blur-sm">
-            <select
-              className="cursor-pointer rounded-md bg-slate-700 px-2 py-1 transition-all hover:bg-slate-800"
-              value={model}
-              onChange={(e) => setModel(e.target.value as ChatModel)}
+          <div className="z-10 flex justify-center gap-5 py-5 backdrop-blur-sm">
+            <button
+              className="rounded-md bg-slate-700 px-3 py-1 transition-all hover:bg-slate-800"
+              onClick={openKeyModal}
             >
-              <option value="gpt-4o">gpt-4o</option>
-              <option value="gpt-4o-mini">gpt-4o-mini</option>
-            </select>
+              manage key
+            </button>
+
+            <button
+              className="rounded-md bg-slate-700 px-3 py-1 transition-all hover:bg-slate-800"
+              onClick={startNewChat}
+              aria-disabled={!currentHistory}
+            >
+              new chat
+            </button>
+
+            <ModelSelect model={model} setModel={handleSelectModel} />
           </div>
           <Messages
             messages={messages}
