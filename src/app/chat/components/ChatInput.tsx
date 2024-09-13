@@ -46,6 +46,12 @@ export default function ChatInput({
     }
   }, [chosenPrompt]);
 
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, []);
+
   const promptTrimmed = prompt.trim();
   const isEmptyPrompt = promptTrimmed.length === 0;
 

@@ -16,7 +16,7 @@ import { Message } from '../models/chat';
 import { ChatModel } from 'openai/resources/index.mjs';
 import PromptSidebar from './PromptSidebar';
 import { Prompt } from '../models/db';
-import ModelSelect from './ModelSelect'; // Add this import
+import ModelSelect from './ModelSelect';
 
 const MAX_MOBILE_WIDTH = 640;
 
