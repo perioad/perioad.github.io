@@ -65,7 +65,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
       const savedHistory = await getHistoryDB();
 
       setHistory(savedHistory);
-      setCurrentChatId(savedHistory.at(-1)?.id ?? 1);
+      setCurrentChatId(savedHistory.at(0)?.id ?? 1);
     };
 
     fetchHistory();
@@ -107,8 +107,9 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
 
   const startNewChat = async () => {
     const allHistory = await getHistoryDB();
+    const newChatId = allHistory.length > 0 ? allHistory.at(0)!.id + 1 : 1;
 
-    setCurrentChatId(allHistory.at(-1)?.id + 1 ?? 1);
+    setCurrentChatId(newChatId);
     setShouldFocusInput(true);
   };
 
@@ -120,7 +121,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     const updatedHistory = await getHistoryDB();
 
     setHistory(updatedHistory);
-    setCurrentChatId(updatedHistory.at(-1)?.id ?? 1);
+    setCurrentChatId(updatedHistory.at(0)?.id ?? 1);
   };
 
   const selectChat = (id: number) => {

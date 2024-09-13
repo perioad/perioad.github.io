@@ -3,7 +3,7 @@ import { HistoryRecord, Prompt } from '../models/db';
 
 const CHAT_DB_NAME = 'byok-chat';
 const HISTORY_STORE_NAME = 'history';
-const PROMPT_STORE_NAME = 'prompts';
+const PROMPTS_STORE_NAME = 'prompts';
 
 let db: IDBPDatabase<HistoryRecord | Prompt>;
 
@@ -18,8 +18,8 @@ export async function initializeDB() {
           });
         }
 
-        if (!db.objectStoreNames.contains(PROMPT_STORE_NAME)) {
-          db.createObjectStore(PROMPT_STORE_NAME, {
+        if (!db.objectStoreNames.contains(PROMPTS_STORE_NAME)) {
+          db.createObjectStore(PROMPTS_STORE_NAME, {
             keyPath: 'id',
             autoIncrement: true,
           });
@@ -32,8 +32,18 @@ export async function initializeDB() {
 
 export async function getHistoryDB() {
   const dbInstance = await initializeDB();
+  const history: HistoryRecord[] = [];
 
-  return await dbInstance.getAll(HISTORY_STORE_NAME);
+  let cursor = await dbInstance
+    .transaction(HISTORY_STORE_NAME)
+    .store.openCursor(null, 'prev');
+
+  while (cursor) {
+    history.push(cursor.value);
+    cursor = await cursor.continue();
+  }
+
+  return history;
 }
 
 export async function getHistoryTransaction() {
@@ -45,11 +55,11 @@ export async function getHistoryTransaction() {
 export async function getPromptsDB() {
   const dbInstance = await initializeDB();
 
-  return await dbInstance.getAll(PROMPT_STORE_NAME);
+  return await dbInstance.getAll(PROMPTS_STORE_NAME);
 }
 
 export async function getPromptTransaction() {
   const dbInstance = await initializeDB();
 
-  return dbInstance.transaction(PROMPT_STORE_NAME, 'readwrite');
+  return dbInstance.transaction(PROMPTS_STORE_NAME, 'readwrite');
 }
