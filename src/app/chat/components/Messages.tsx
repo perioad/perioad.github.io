@@ -54,7 +54,12 @@ export default function Messages({
           <Fragment key={i}>
             {message.role === 'user' && (
               <div className="mb-5 ml-auto flex w-full justify-end border-r-2 border-sky-500 pl-20 pr-5 leading-6 last:mb-0">
-                <p className="w-fit break-words">{message.content}</p>
+                <p
+                  className="w-fit break-words"
+                  dangerouslySetInnerHTML={{
+                    __html: marked.parse(message.content),
+                  }}
+                />
               </div>
             )}
             {message.role === 'assistant' && (

@@ -17,6 +17,7 @@ const config: Config = {
         appear: 'appear 0.5s ease-in-out',
         ['spin-border']: 'spinBorder 5s linear infinite',
         ['bg-pattern']: 'colorChange 5s linear infinite',
+        'fly-up': 'fly-up .5s ease-out forwards',
       },
       keyframes: {
         appear: {
@@ -42,6 +43,10 @@ const config: Config = {
           '100%': {
             filter: 'hue-rotate(360deg)',
           },
+        },
+        'fly-up': {
+          '0%': { transform: 'translateY(-50px)', opacity: '1' },
+          '100%': { transform: 'translateY(-100px)', opacity: '0' },
         },
       },
     },

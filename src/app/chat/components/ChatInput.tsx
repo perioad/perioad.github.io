@@ -15,15 +15,26 @@ export default function ChatInput({
   onFocused,
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const animatedTextRef = useRef<HTMLDivElement>(null);
   const [prompt, setPrompt] = useState('');
+  const [promptForAnimation, setPromptForAnimation] = useState('');
+  const [isAnimating, setIsAnimating] = useState(false);
 
-  const adjustTextareaHeight = () => {
-    if (textareaRef.current) {
+  const adjustElementHeight = (
+    ref: React.RefObject<HTMLTextAreaElement | HTMLDivElement>,
+  ) => {
+    if (ref.current && textareaRef.current) {
       const maxHeight = 200;
-      textareaRef.current.style.height = 'auto';
+      ref.current.style.height = 'auto';
       const scrollHeight = textareaRef.current.scrollHeight;
       const newHeight = Math.min(scrollHeight, maxHeight);
-      textareaRef.current.style.height = `${newHeight}px`;
+      ref.current.style.height = `${newHeight}px`;
+    }
+  };
+
+  const handleTextareaScroll = () => {
+    if (textareaRef.current && animatedTextRef.current) {
+      animatedTextRef.current.scrollTop = textareaRef.current.scrollTop;
     }
   };
 
@@ -37,7 +48,8 @@ export default function ChatInput({
       setPrompt(value);
 
       setTimeout(() => {
-        adjustTextareaHeight();
+        adjustElementHeight(textareaRef);
+        adjustElementHeight(animatedTextRef);
         if (textareaRef.current) {
           textareaRef.current.focus();
           textareaRef.current.setSelectionRange(value.length, value.length);
@@ -53,6 +65,7 @@ export default function ChatInput({
   }, []);
 
   const promptTrimmed = prompt.trim();
+  const promptTrimmedForAnimation = promptForAnimation.trim();
   const isEmptyPrompt = promptTrimmed.length === 0;
 
   const minHeight = 52;
@@ -61,7 +74,9 @@ export default function ChatInput({
     const value: string = event.target.value;
 
     setPrompt(value);
-    adjustTextareaHeight();
+    setPromptForAnimation(value);
+    adjustElementHeight(textareaRef);
+    adjustElementHeight(animatedTextRef);
   }
 
   function handleSubmit(prompt: string) {
@@ -69,6 +84,7 @@ export default function ChatInput({
       return;
     }
 
+    setIsAnimating(true);
     addNewMessage(prompt, 'user');
     setPrompt('');
 
@@ -76,6 +92,10 @@ export default function ChatInput({
       textareaRef.current.style.height = `${minHeight}px`;
       textareaRef.current.focus();
     }
+
+    setTimeout(() => {
+      setIsAnimating(false);
+    }, 500);
   }
 
   useEffect(() => {
@@ -85,8 +105,15 @@ export default function ChatInput({
     }
   }, [shouldFocus, onFocused]);
 
+  useEffect(() => {
+    if (textareaRef.current && animatedTextRef.current) {
+      const textareaWidth = textareaRef.current.offsetWidth;
+      animatedTextRef.current.style.width = `${textareaWidth}px`;
+    }
+  }, [prompt]);
+
   return (
-    <div className="mx-auto flex w-full max-w-4xl p-5 pt-0">
+    <div className="relative mx-auto flex w-full max-w-4xl p-5 pt-0">
       <textarea
         ref={textareaRef}
         className="h-auto w-full resize-none rounded-md bg-slate-100 p-3 text-base leading-6 sm:text-sm dark:bg-slate-800"
@@ -95,7 +122,19 @@ export default function ChatInput({
         placeholder="Write your prompt here.."
         value={prompt}
         onChange={handleTextAreaChange}
+        onScroll={handleTextareaScroll}
       ></textarea>
+
+      <div
+        ref={animatedTextRef}
+        className={`pointer-events-none absolute bottom-0 left-5 w-full overflow-y-auto p-3 ${
+          isAnimating ? 'animate-fly-up visible' : 'invisible'
+        }`}
+      >
+        <pre className="whitespace-pre-wrap break-words">
+          {promptTrimmedForAnimation}
+        </pre>
+      </div>
 
       <button
         className={`${isEmptyPrompt ? 'w-0 scale-0' : ''} ml-5 h-[52px] w-[52px] flex-shrink-0 self-end rounded-md bg-slate-100 text-xl transition-all focus-visible:w-[52px] focus-visible:scale-100 aria-disabled:grayscale dark:bg-slate-800`}
