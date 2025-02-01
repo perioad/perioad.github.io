@@ -43,7 +43,19 @@ const ModelSelect: React.FC<ModelSelectProps> = ({ model, setModel }) => {
         setIsLoading(true);
         const models = await openai.models.list();
         const chatModels = models.data
-          .filter((model) => model.id.startsWith('gpt-'))
+          .filter((model) => {
+            return (
+              !model.id.includes('audio') &&
+              !model.id.includes('realtime') &&
+              !model.id.includes('dall-e') &&
+              !model.id.includes('text-embedding') &&
+              !model.id.includes('whisper') &&
+              !model.id.includes('babbage') &&
+              !model.id.includes('omni-moderation') &&
+              !model.id.includes('tts') &&
+              !model.id.includes('davinci')
+            );
+          })
           .sort((a, b) => b.created - a.created)
           .map((model) => model.id) as ChatModel[];
         setModels(chatModels);
