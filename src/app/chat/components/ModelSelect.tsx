@@ -155,9 +155,11 @@ const ModelSelect: React.FC<ModelSelectProps> = ({ model, setModel }) => {
     ids.filter((id) => id !== model);
 
   return (
-    <div className="relative flex items-center gap-2">
+    <div className="relative flex min-w-0 items-center gap-2">
       <select
-        className="w-36 cursor-pointer rounded-md bg-slate-700 px-2 py-1 text-center text-ellipsis transition-all hover:bg-slate-800"
+        // Allowed to shrink past its width so that a narrow screen truncates the
+        // model name instead of pushing the header controls off the edge.
+        className="w-36 min-w-0 cursor-pointer rounded-md bg-slate-700 px-2 py-1 text-center text-ellipsis transition-all hover:bg-slate-800"
         value={model}
         title={model}
         onChange={handleChange}

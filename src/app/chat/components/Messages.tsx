@@ -8,6 +8,7 @@ import useAiStream from '../hooks/useAiStream';
 import { Message } from '../models/chat';
 import { useScrollToBottom } from '../hooks/useScrollToBottom';
 import { ChatModel } from 'openai/resources/index.mjs';
+import { ThinkingLevel } from '../utils/thinking';
 
 const marked = new Marked(
   markedHighlight({
@@ -39,10 +40,12 @@ export default function Messages({
   messages,
   addNewMessage,
   model,
+  thinkingLevel,
 }: {
   messages: Message[];
   addNewMessage: (content: string, role: 'user' | 'assistant') => void;
   model: ChatModel;
+  thinkingLevel: ThinkingLevel;
 }) {
   const { containerRef, scrollToBottom, scrollToBottomNow, isAtBottom } =
     useScrollToBottom();
@@ -58,7 +61,13 @@ export default function Messages({
 
   const isAwaitingReply = messages.at(-1)?.role === 'user';
 
-  useAiStream(isAwaitingReply, messages, addAssistantContent, model);
+  useAiStream(
+    isAwaitingReply,
+    messages,
+    addAssistantContent,
+    model,
+    thinkingLevel,
+  );
 
   // One listener for every code block, since the buttons live inside HTML that
   // React only knows as a string.

@@ -20,7 +20,14 @@ import { Prompt } from '../models/db';
 import ModelSelect from './ModelSelect';
 import MobileDrawer from './MobileDrawer';
 import ConfirmDialog from './ConfirmDialog';
+import ThinkingSelect from './ThinkingSelect';
 import { useMediaQuery } from '../../../hooks/useMediaQuery';
+import {
+  DEFAULT_THINKING_LEVEL,
+  parseThinkingLevel,
+  supportsThinking,
+  ThinkingLevel,
+} from '../utils/thinking';
 
 // Tailwind's `sm` starts at 40rem, so this is everything below it.
 const MOBILE_QUERY = '(max-width: 39.9375rem)';
@@ -33,6 +40,15 @@ function getModelFromLocalStorage(): ChatModel {
   if (!savedModel) return 'gpt-4o';
 
   return savedModel as ChatModel;
+}
+
+function getThinkingLevelFromLocalStorage(): ThinkingLevel {
+  if (typeof window === 'undefined') return DEFAULT_THINKING_LEVEL;
+
+  return (
+    parseThinkingLevel(localStorage.getItem('thinking')) ??
+    DEFAULT_THINKING_LEVEL
+  );
 }
 
 // A rail left open in a desktop session would come back as a drawer sitting on
@@ -53,6 +69,9 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     getSavedPanelState('isHistoryVisible'),
   );
   const [model, setModel] = useState<ChatModel>(getModelFromLocalStorage);
+  const [thinkingLevel, setThinkingLevel] = useState<ThinkingLevel>(
+    getThinkingLevelFromLocalStorage,
+  );
   const [isPromptSidebarVisible, setIsPromptSidebarVisible] = useState(() =>
     getSavedPanelState('isPromptSidebarVisible'),
   );
@@ -229,6 +248,11 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     setModel(model);
   }
 
+  function handleSelectThinkingLevel(level: ThinkingLevel) {
+    setThinkingLevel(level);
+    localStorage.setItem('thinking', level);
+  }
+
   function handleOpenKeyModal() {
     closeDrawers();
     openKeyModal();
@@ -299,7 +323,16 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
           </button>
         </div>
 
-        <ModelSelect model={model} setModel={handleSelectModel} />
+        <div className="flex min-w-0 items-center gap-1">
+          <ModelSelect model={model} setModel={handleSelectModel} />
+
+          {supportsThinking(model) && (
+            <ThinkingSelect
+              level={thinkingLevel}
+              setLevel={handleSelectThinkingLevel}
+            />
+          )}
+        </div>
 
         <div className="flex justify-end">
           <button
@@ -348,6 +381,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
             messages={messages}
             addNewMessage={addNewMessage}
             model={model}
+            thinkingLevel={thinkingLevel}
           />
 
           <ChatInput

@@ -2,12 +2,14 @@ import OpenAI from 'openai';
 import { useEffect } from 'react';
 import { Message } from '../models/chat';
 import { ChatModel } from 'openai/resources/index.mjs';
+import { supportsThinking, ThinkingLevel } from '../utils/thinking';
 
 const useAiStream = (
   shouldRequest: boolean,
   messages: Message[],
   onNewChunk: (content: string) => Promise<void>,
   model: ChatModel,
+  thinkingLevel: ThinkingLevel,
 ) => {
   useEffect(() => {
     if (!shouldRequest) return;
@@ -40,6 +42,9 @@ const useAiStream = (
           model,
           messages,
           stream: true,
+          // Checked here as well as in the header, so that a model without
+          // reasoning never carries the parameter and the 400 it would cause.
+          ...(supportsThinking(model) && { reasoning_effort: thinkingLevel }),
         });
 
         let updatedMessage = '';
@@ -55,7 +60,7 @@ const useAiStream = (
     };
 
     ask();
-  }, [shouldRequest, messages, onNewChunk, model]);
+  }, [shouldRequest, messages, onNewChunk, model, thinkingLevel]);
 };
 
 export default useAiStream;
