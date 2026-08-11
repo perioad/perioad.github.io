@@ -1,4 +1,5 @@
-import { ChangeEvent, useRef, useState, useEffect } from 'react';
+import { ChangeEvent, KeyboardEvent, useRef, useState, useEffect } from 'react';
+import { ArrowUp } from 'lucide-react';
 import { Prompt } from '../models/db';
 
 interface ChatInputProps {
@@ -24,7 +25,11 @@ export default function ChatInput({
     ref: React.RefObject<HTMLTextAreaElement | HTMLDivElement | null>,
   ) => {
     if (ref.current && textareaRef.current) {
-      const maxHeight = 200;
+      // A flat 200px is taller than the space left above an open keyboard on a
+      // small phone, where it would push the conversation off the top.
+      const visibleHeight = window.visualViewport?.height ?? window.innerHeight;
+      const maxHeight = Math.min(200, visibleHeight * 0.4);
+
       ref.current.style.height = 'auto';
       const scrollHeight = textareaRef.current.scrollHeight;
       const newHeight = Math.min(scrollHeight, maxHeight);
@@ -59,9 +64,13 @@ export default function ChatInput({
   }, [chosenPrompt]);
 
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.focus();
+    // Focusing on mount throws up the on-screen keyboard before the user has
+    // asked to type, covering most of the conversation on a phone.
+    if (window.matchMedia('(pointer: coarse)').matches) {
+      return;
     }
+
+    textareaRef.current?.focus();
   }, []);
 
   const promptTrimmed = prompt.trim();
@@ -77,6 +86,18 @@ export default function ChatInput({
     setPromptForAnimation(value);
     adjustElementHeight(textareaRef);
     adjustElementHeight(animatedTextRef);
+  }
+
+  // Enter sends on a keyboard, where Shift+Enter is the well known way to get a
+  // newline. On a touch keyboard the return key is the only way to break a
+  // line, so it is left alone and the send button does the work.
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== 'Enter' || event.shiftKey) return;
+
+    if (window.matchMedia('(pointer: coarse)').matches) return;
+
+    event.preventDefault();
+    handleSubmit(prompt.trim());
   }
 
   function handleSubmit(prompt: string) {
@@ -113,7 +134,7 @@ export default function ChatInput({
   }, [prompt]);
 
   return (
-    <div className="relative mx-auto flex w-full max-w-4xl p-5 pt-0">
+    <div className="relative mx-auto flex w-full max-w-4xl px-3 pt-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5 sm:pb-5">
       <textarea
         ref={textareaRef}
         className="h-auto w-full resize-none rounded-md bg-slate-100 p-3 text-base leading-6 sm:text-sm dark:bg-slate-800"
@@ -122,12 +143,13 @@ export default function ChatInput({
         placeholder="Write your prompt here.."
         value={prompt}
         onChange={handleTextAreaChange}
+        onKeyDown={handleKeyDown}
         onScroll={handleTextareaScroll}
       ></textarea>
 
       <div
         ref={animatedTextRef}
-        className={`pointer-events-none absolute bottom-0 left-5 w-full overflow-y-auto p-3 ${
+        className={`pointer-events-none absolute bottom-0 left-3 overflow-y-auto p-3 sm:left-5 ${
           isAnimating ? 'visible animate-fly-up' : 'invisible'
         }`}
       >
@@ -137,11 +159,13 @@ export default function ChatInput({
       </div>
 
       <button
-        className={`${isEmptyPrompt ? 'w-0 scale-0' : ''} ml-5 h-[52px] w-[52px] shrink-0 self-end rounded-md bg-slate-100 text-xl transition-all focus-visible:w-[52px] focus-visible:scale-100 aria-disabled:grayscale dark:bg-slate-800`}
+        className="ml-3 flex h-[52px] w-[52px] shrink-0 items-center justify-center self-end rounded-md bg-slate-100 transition-all aria-disabled:opacity-40 sm:ml-5 dark:bg-slate-800"
         aria-disabled={isEmptyPrompt}
+        title="Send"
+        aria-label="Send"
         onClick={() => handleSubmit(promptTrimmed)}
       >
-        ✨
+        <ArrowUp className="h-5 w-5" />
       </button>
     </div>
   );

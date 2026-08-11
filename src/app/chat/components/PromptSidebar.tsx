@@ -1,23 +1,27 @@
 import { useState } from 'react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { Prompt } from '../models/db';
 import Modal from '../../components/Modal';
 
 interface PromptSidebarProps {
-  isVisible: boolean;
   prompts: Prompt[];
   addPrompt: (title: string, content: string) => Promise<void>;
   updatePrompt: (id: number, title: string, content: string) => Promise<void>;
-  removePrompt: (id: number) => Promise<void>;
+  removePrompt: (prompt: Prompt) => void;
   choosePrompt: (prompt: Prompt) => void;
+  onEditorOpen?: () => void;
 }
 
+// Renders the list only, like `History`: the caller decides between rail and
+// drawer. `onEditorOpen` lets the mobile drawer get out of the way, since the
+// editor needs the whole screen there.
 export default function PromptSidebar({
-  isVisible,
   prompts,
   addPrompt,
   updatePrompt,
   removePrompt,
   choosePrompt,
+  onEditorOpen,
 }: PromptSidebarProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -30,65 +34,67 @@ export default function PromptSidebar({
     } else {
       addPrompt(title.trim(), content.trim());
     }
+
+    closeEditor();
+  };
+
+  function openEditor(prompt: Prompt | null) {
+    setEditingPrompt(prompt);
+    setTitle(prompt?.title ?? '');
+    setContent(prompt?.content ?? '');
+    setIsModalOpen(true);
+    onEditorOpen?.();
+  }
+
+  function closeEditor() {
     setIsModalOpen(false);
+    setEditingPrompt(null);
     setTitle('');
     setContent('');
-    setEditingPrompt(null);
-  };
-
-  const handleRemovePrompt = (prompt: Prompt) => {
-    if (
-      prompt &&
-      confirm(`are you sure you want to remove "${prompt.title}" prompt?`)
-    ) {
-      removePrompt(prompt.id!);
-    }
-  };
-
-  const openEditModal = (prompt: Prompt) => {
-    setEditingPrompt(prompt);
-    setTitle(prompt.title);
-    setContent(prompt.content);
-    setIsModalOpen(true);
-  };
+  }
 
   return (
-    <aside
-      className={`${isVisible ? 'w-full sm:w-56' : 'w-0'} h-full shrink-0 overflow-y-auto border-l border-l-slate-800 text-base transition-all sm:text-sm`}
-    >
-      <ul className="flex flex-col gap-3 p-3">
-        <button
-          className="h-auto w-full items-stretch overflow-hidden rounded-md px-2 py-3 text-2xl text-ellipsis whitespace-nowrap transition-all hover:bg-slate-800 sm:h-9 sm:py-0 dark:bg-slate-700"
-          onClick={() => setIsModalOpen(true)}
-        >
-          +
-        </button>
+    <>
+      <ul className="flex flex-col gap-1 p-2">
+        <li>
+          <button
+            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-md transition-colors hover:bg-slate-100 sm:min-h-9 dark:bg-slate-700 dark:hover:bg-slate-600"
+            onClick={() => openEditor(null)}
+          >
+            <Plus className="h-4 w-4" />
+            new prompt
+          </button>
+        </li>
 
         {prompts.map((prompt) => (
           <li
             key={prompt.id}
-            className={`group relative flex h-auto w-full items-stretch overflow-hidden rounded-md px-2 py-3 text-ellipsis whitespace-nowrap transition-all sm:h-9 sm:py-0 dark:bg-slate-800`}
+            className="group flex items-center rounded-md dark:bg-slate-800"
           >
             <button
-              className={`w-full overflow-hidden text-ellipsis whitespace-nowrap`}
+              className="min-h-11 grow overflow-hidden px-3 text-left text-ellipsis whitespace-nowrap sm:min-h-9"
               title={prompt.title}
-              onClick={() => {
-                choosePrompt({ ...prompt });
-              }}
+              onClick={() => choosePrompt({ ...prompt })}
             >
               {prompt.title}
             </button>
+
             <button
-              className="w-9 shrink-0 text-3xl transition-all hover:scale-125 sm:w-0 sm:text-sm sm:opacity-0 sm:group-hover:w-9 sm:group-hover:opacity-100 sm:focus-visible:w-9 sm:focus-visible:opacity-100"
-              onClick={() => openEditModal(prompt)}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-slate-200 sm:h-9 sm:w-0 sm:opacity-0 sm:group-hover:w-9 sm:group-hover:opacity-100 sm:focus-visible:w-9 sm:focus-visible:opacity-100 dark:hover:bg-slate-700"
+              title={`Edit prompt: ${prompt.title}`}
+              aria-label={`Edit prompt: ${prompt.title}`}
+              onClick={() => openEditor(prompt)}
             >
-              ✏️
+              <Pencil className="h-4 w-4" />
             </button>
+
             <button
-              className="w-9 shrink-0 text-3xl transition-all hover:scale-125 sm:w-0 sm:text-sm sm:opacity-0 sm:group-hover:w-9 sm:group-hover:opacity-100 sm:focus-visible:w-9 sm:focus-visible:opacity-100"
-              onClick={() => handleRemovePrompt(prompt)}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-slate-200 sm:h-9 sm:w-0 sm:opacity-0 sm:group-hover:w-9 sm:group-hover:opacity-100 sm:focus-visible:w-9 sm:focus-visible:opacity-100 dark:hover:bg-slate-700"
+              title={`Remove prompt: ${prompt.title}`}
+              aria-label={`Remove prompt: ${prompt.title}`}
+              onClick={() => removePrompt(prompt)}
             >
-              🗑️
+              <Trash2 className="h-4 w-4" />
             </button>
           </li>
         ))}
@@ -96,35 +102,30 @@ export default function PromptSidebar({
 
       <Modal
         isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingPrompt(null);
-          setTitle('');
-          setContent('');
-        }}
+        onClose={closeEditor}
         title={editingPrompt ? 'edit prompt' : 'create prompt'}
       >
         <input
-          className="mb-4 w-full rounded-sm bg-slate-700 p-2"
+          className="mb-4 w-full rounded-sm bg-slate-700 p-3"
           placeholder="gordon ramsay"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
         <textarea
-          className="mb-4 w-full rounded-sm bg-slate-700 p-2"
+          className="mb-4 w-full rounded-sm bg-slate-700 p-3"
           placeholder="you're gordon ramsay. teach me how to cook lasagna. pls don't scream"
           value={content}
           rows={4}
           onChange={(e) => setContent(e.target.value)}
         />
         <button
-          className="w-full rounded-sm bg-green-700 px-4 py-2 text-white transition-all hover:bg-green-800 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+          className="min-h-11 w-full rounded-sm bg-green-700 px-4 text-white transition-all hover:bg-green-800 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
           onClick={handleAddOrUpdatePrompt}
           aria-disabled={!title || !content}
         >
           {editingPrompt ? 'update' : 'create'}
         </button>
       </Modal>
-    </aside>
+    </>
   );
 }

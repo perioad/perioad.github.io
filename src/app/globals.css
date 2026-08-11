@@ -11,6 +11,13 @@
   --animate-bg-pattern: colorChange 5s linear infinite;
   --animate-fly-up: fly-up 0.5s ease-out forwards;
 
+  --animate-scrim-in: appear 0.2s ease-out;
+  --animate-scrim-out: appear 0.2s ease-in reverse;
+  --animate-drawer-in-left: drawer-left 0.25s ease-out;
+  --animate-drawer-out-left: drawer-left 0.25s ease-in reverse;
+  --animate-drawer-in-right: drawer-right 0.25s ease-out;
+  --animate-drawer-out-right: drawer-right 0.25s ease-in reverse;
+
   @keyframes appear {
     0% {
       opacity: 0;
@@ -43,6 +50,22 @@
     100% {
       transform: translateY(-100px);
       opacity: 0;
+    }
+  }
+  @keyframes drawer-left {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
+  @keyframes drawer-right {
+    0% {
+      transform: translateX(100%);
+    }
+    100% {
+      transform: translateX(0);
     }
   }
 }
@@ -91,4 +114,48 @@
 .markdown li {
   list-style-type: disc;
   margin-left: 1.5rem;
+}
+
+/* `block` is what gives the table its own scroll area instead of forcing the
+   whole conversation sideways on a narrow screen. */
+.markdown table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.markdown th,
+.markdown td {
+  border: 1px solid var(--color-slate-700);
+  padding: 0.25rem 0.5rem;
+}
+
+.code-block {
+  position: relative;
+}
+
+.code-copy {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 1;
+  border-radius: 0.375rem;
+  background-color: var(--color-slate-700);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-slate-100);
+  opacity: 0;
+  transition: opacity 150ms;
+}
+
+.code-block:hover .code-copy,
+.code-copy:focus-visible {
+  opacity: 1;
+}
+
+/* Hover cannot reveal it on a touch screen, so it is always there. */
+@media (pointer: coarse) {
+  .code-copy {
+    opacity: 1;
+  }
 }

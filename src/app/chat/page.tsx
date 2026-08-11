@@ -5,12 +5,14 @@ import AskKeyModal from './components/AskKeyModal';
 import Chat from './components/Chat';
 import { Source_Code_Pro } from 'next/font/google';
 import { Spinner } from '../../components/spinner/Spinner';
+import { useVisualViewport } from '../../hooks/useVisualViewport';
 
 const font = Source_Code_Pro({ weight: '400', subsets: ['latin'] });
 
 export default function ChatPage() {
   const [isKeyModalDisplayed, setIsKeyModalDisplayed] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const viewport = useVisualViewport();
 
   useEffect(() => {
     setIsInitialized(true);
@@ -20,6 +22,19 @@ export default function ChatPage() {
     if (!apiKey) {
       setIsKeyModalDisplayed(true);
     }
+  }, []);
+
+  useEffect(() => {
+    // The chat fills the screen and scrolls internally, so a scrollable document
+    // behind it does nothing except give iOS somewhere to push the page when the
+    // keyboard opens.
+    const { overflow } = document.body.style;
+
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = overflow;
+    };
   }, []);
 
   function openKeyModal() {
@@ -40,9 +55,19 @@ export default function ChatPage() {
     );
   }
 
+  // Pinned to the visual viewport rather than laid out in the document. Sizing
+  // alone is not enough: iOS scrolls the layout viewport to clear the keyboard,
+  // which carries a document-flow app off the top of the screen. `top` does the
+  // compensating instead of a transform, which would make this element the
+  // containing block for the drawers and dialogs inside it.
+  const viewportStyle = viewport
+    ? { height: `${viewport.height}px`, top: `${viewport.offsetTop}px` }
+    : undefined;
+
   return (
     <main
-      className={`${font.className} relative flex h-dvh w-dvw flex-col text-sm`}
+      className={`${font.className} fixed inset-x-0 top-0 flex h-dvh flex-col text-sm`}
+      style={viewportStyle}
     >
       <AskKeyModal closeModal={closeModal} isOpen={isKeyModalDisplayed} />
 

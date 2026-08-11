@@ -1,64 +1,52 @@
-import {
-  ChatCompletionUserMessageParam,
-  ChatCompletionAssistantMessageParam,
-} from 'openai/resources/index.mjs';
+import { Trash2 } from 'lucide-react';
+import { HistoryRecord } from '../models/db';
 
-type Message =
-  ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam;
+interface HistoryProps {
+  history: HistoryRecord[];
+  selectChat: (id: number) => void;
+  removeChat: (chat: HistoryRecord) => void;
+  currentChatId: number;
+}
 
-type History = {
-  id: number;
-  title: string;
-  messages: Message[];
-};
-
+// Renders the list only. The container is the caller's business, because it is
+// an inline rail on desktop and a drawer on mobile.
 export default function History({
   history,
   selectChat,
   removeChat,
   currentChatId,
-  isVisible,
-}: {
-  history: History[];
-  selectChat: (id: number) => void;
-  removeChat: (id: number) => void;
-  currentChatId: number;
-  isVisible: boolean;
-}) {
-  function handleRemoveChat(chat: History) {
-    if (confirm(`are you sure you want to remove "${chat.title}" chat?`)) {
-      removeChat(chat.id);
-    }
+}: HistoryProps) {
+  if (history.length === 0) {
+    return (
+      <p className="p-4 text-slate-500 dark:text-slate-400">no chats yet</p>
+    );
   }
 
   return (
-    <aside
-      className={`${isVisible ? 'w-full sm:w-56' : 'w-0'} h-full shrink-0 overflow-y-auto border-r border-r-slate-800 text-base transition-all sm:text-sm`}
-    >
-      <ul className="flex flex-col gap-3 p-3">
-        {history.map((chat: History) => (
-          <li
-            className={`${chat.id === currentChatId ? 'bg-slate-100 dark:bg-slate-800' : ''} group flex h-auto w-full items-stretch overflow-hidden rounded-md px-2 py-3 text-ellipsis whitespace-nowrap sm:h-9 sm:py-0`}
-            key={chat.id}
+    <ul className="flex flex-col gap-1 p-2">
+      {history.map((chat) => (
+        <li
+          className={`${chat.id === currentChatId ? 'bg-slate-100 dark:bg-slate-800' : ''} group flex items-center rounded-md`}
+          key={chat.id}
+        >
+          <button
+            className="min-h-11 grow overflow-hidden px-3 text-left text-ellipsis whitespace-nowrap sm:min-h-9"
+            title={chat.title}
+            onClick={() => selectChat(chat.id)}
           >
-            <button
-              className={`w-full overflow-hidden text-ellipsis whitespace-nowrap`}
-              title={chat.title}
-              onClick={() => selectChat(chat.id)}
-            >
-              {chat.title}
-            </button>
+            {chat.title}
+          </button>
 
-            <button
-              className="w-9 shrink-0 text-3xl transition-all hover:scale-125 sm:w-0 sm:text-sm sm:opacity-0 sm:group-hover:w-9 sm:group-hover:opacity-100 sm:focus-visible:w-9 sm:focus-visible:opacity-100"
-              title={`Remove chat: ${chat.title}`}
-              onClick={() => handleRemoveChat(chat)}
-            >
-              🚽
-            </button>
-          </li>
-        ))}
-      </ul>
-    </aside>
+          <button
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-slate-200 sm:h-9 sm:w-0 sm:opacity-0 sm:group-hover:w-9 sm:group-hover:opacity-100 sm:focus-visible:w-9 sm:focus-visible:opacity-100 dark:hover:bg-slate-700"
+            title={`Remove chat: ${chat.title}`}
+            aria-label={`Remove chat: ${chat.title}`}
+            onClick={() => removeChat(chat)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </li>
+      ))}
+    </ul>
   );
 }
