@@ -1,0 +1,80 @@
+---
+description: Write comments that state what the code cannot — measurements, rejected alternatives, constraints, prevented bugs — never narration
+globs: **/*.ts
+alwaysApply: false
+---
+
+# Comments Say What the Code Cannot
+
+A comment earns its place only if it carries information absent from the code
+itself. There are four kinds that qualify:
+
+- **A measurement** — a tuned constant and the data behind it.
+- **A rejected alternative** — the obvious approach and why it fails here.
+- **An external constraint** — a provider quirk, a protocol rule, an infra fact.
+- **A bug it prevents** — what breaks if someone "simplifies" this.
+
+Everything else is noise that has to be maintained, drifts out of date, and
+costs context on every read.
+
+## Do
+
+Rejected alternative plus the bug it prevents:
+
+```ts
+// Parse a boolean from an env string. `z.coerce.boolean()` is unsafe for flags
+// because `Boolean("false") === true` — so `FLAG=false` would read as true.
+// An empty value counts as unset rather than false, so `FLAG=` falls back to
+// the declared default. That matters most for AUTH_ENABLED, whose default is
+// `true`: reading empty as false would silently drop the Room into
+// header-trust mode.
+```
+
+A measurement, with the means to re-derive it:
+
+```ts
+// Measured over ~480 seller result sets, a page spans 0.032 end to end at the
+// median and 0.063 at p90, so 0.12 is a backstop against a partner whose whole
+// page is a different tier of match, not an everyday cut. Tune against the
+// gateway's `image scores:` line, which prints max/p50/min per seller.
+RELEVANCE_MAX_DROP: z.coerce.number().positive().default(0.12),
+```
+
+## Don't
+
+Narration — the code already says this:
+
+```ts
+// ❌ Flag only when chips were actually found.
+showsDetectedItems: detectedItems.length > 0,
+```
+
+Tombstones — documenting something that is no longer here. Useful for one
+review, noise forever. Delete the code, delete its comment; the removal is in
+git history:
+
+```ts
+// ❌ The Room no longer embeds images: `EMBED_IMAGE_URL` now lives in the
+// gateway config.
+```
+
+Restating an ADR. Cite it instead, so there is one copy that can be updated:
+
+```ts
+// ✅ Room-side only: a closed taxonomy never reaches the User Agent (ADR 0020).
+```
+
+## When you move code
+
+Move the comment **verbatim**. Rewriting a docstring during a pure move is how
+the non-obvious clause gets dropped — the one sentence that explained why a
+`select` omits a column is exactly what a reviewer will not notice going
+missing.
+
+## Notes
+
+- Prefer a precise name over a comment explaining a vague one.
+- If a comment is needed because the code is confusing, consider fixing the
+  code instead.
+- ADR citations (`ADR 0021`) are encouraged where the reasoning is load-bearing.
+  Do not paste the ADR's contents inline.
