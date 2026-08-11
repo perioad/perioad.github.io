@@ -164,7 +164,7 @@ export default function ChatInput({
   }, [prompt]);
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-3 pt-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5 sm:pb-5">
+    <div className="mx-auto w-full max-w-4xl px-3 pt-1 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5 sm:pb-5">
       {recording.error && (
         <p role="alert" className="mb-2 text-red-500">
           {recording.error}
