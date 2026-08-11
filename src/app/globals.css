@@ -172,3 +172,21 @@
     opacity: 1;
   }
 }
+
+/* iOS Safari zooms the page in when a field smaller than 16px takes focus, and
+   it does not zoom back out when the field is done with. The chat runs at 14px
+   and `font: inherit` from preflight carries that into every control, so the
+   whole page jumps on the first tap into an input.
+
+   Keyed on the pointer rather than the width, because the constraint belongs to
+   touch devices and not to narrow windows: an iPad in landscape is wide enough
+   to miss a breakpoint and still zooms. Unlayered for the same reason the
+   markdown rules above are — a `text-sm` added to a field later would otherwise
+   win and quietly bring the zoom back. */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 1rem;
+  }
+}
