@@ -19,12 +19,6 @@ const marked = new Marked(
   }),
 );
 
-const SUGGESTIONS = [
-  'explain a tricky bit of typescript',
-  'review this function for edge cases',
-  'write a commit message for these changes',
-];
-
 // `marked-highlight` owns the `code` renderer, so rather than reimplement its
 // escaping the wrapper is added to the finished HTML. Only our own tags can
 // match: anything in the source is escaped by the time it gets here.
@@ -45,12 +39,10 @@ export default function Messages({
   messages,
   addNewMessage,
   model,
-  onSuggestion,
 }: {
   messages: Message[];
   addNewMessage: (content: string, role: 'user' | 'assistant') => void;
   model: ChatModel;
-  onSuggestion: (content: string) => void;
 }) {
   const { containerRef, scrollToBottom, scrollToBottomNow, isAtBottom } =
     useScrollToBottom();
@@ -116,26 +108,11 @@ export default function Messages({
       >
         <div className="mx-auto w-full max-w-3xl text-base sm:text-sm">
           {messages.length === 0 && (
-            <div className="flex flex-col items-center gap-6 py-10 text-center">
-              <div>
-                <p className="mb-1 text-xl">what shall we get into?</p>
-                <p className="text-slate-500 dark:text-slate-400">
-                  byok - bring your own key
-                </p>
-              </div>
-
-              <ul className="flex w-full flex-col gap-2">
-                {SUGGESTIONS.map((suggestion) => (
-                  <li key={suggestion}>
-                    <button
-                      className="min-h-11 w-full rounded-md border border-slate-300 px-4 transition-colors hover:bg-slate-100 dark:border-slate-800 dark:hover:bg-slate-800"
-                      onClick={() => onSuggestion(suggestion)}
-                    >
-                      {suggestion}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+            <div className="py-10 text-center">
+              <p className="mb-1 text-xl">what shall we get into?</p>
+              <p className="text-slate-500 dark:text-slate-400">
+                byok - bring your own key
+              </p>
             </div>
           )}
 

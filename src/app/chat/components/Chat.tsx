@@ -348,9 +348,6 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
             messages={messages}
             addNewMessage={addNewMessage}
             model={model}
-            onSuggestion={(content) =>
-              choosePrompt({ title: content, content })
-            }
           />
 
           <ChatInput
