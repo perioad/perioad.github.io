@@ -74,6 +74,16 @@ export const useIsWaving = (frequency: number): Waving => {
             video: true,
           });
 
+          // Stopping the tracks is the cleanup's job everywhere except here:
+          // the permission dialog can outlive the component, and a cleanup that
+          // ran while it was still up found no stream on the element to stop.
+          // Nothing else holds this one, so the camera would stay on.
+          if (isCancelled) {
+            stream.getTracks().forEach((track) => track.stop());
+
+            return;
+          }
+
           video.srcObject = stream;
 
           setIsAccessGranted(true);
