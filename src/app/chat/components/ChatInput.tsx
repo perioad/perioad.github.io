@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
   useEffect,
+  useLayoutEffect,
 } from 'react';
 import { ArrowUp, Mic, Square } from 'lucide-react';
 import { Spinner } from '../../../components/spinner/Spinner';
@@ -39,16 +40,6 @@ function fitToContent(
   element.style.height = `${newHeight}px`;
 }
 
-// The overlay that flies away on send is a copy of the box, so the two are
-// always sized together.
-function syncHeights(
-  textarea: HTMLTextAreaElement | null,
-  animated: HTMLDivElement | null,
-) {
-  fitToContent(textarea, textarea);
-  fitToContent(animated, textarea);
-}
-
 export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const animatedTextRef = useRef<HTMLDivElement>(null);
@@ -77,11 +68,9 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
           existing.length === 0 ? `${content}\n` : `${content}\n${existing}`,
         );
 
-        // After the value has landed in the DOM, so the box can be sized to it
-        // and the caret put at the end.
+        // After the value has landed in the DOM, so the caret can be put at the
+        // end of it.
         setTimeout(() => {
-          syncHeights(textareaRef.current, animatedTextRef.current);
-
           const textarea = textareaRef.current;
 
           if (textarea) {
@@ -114,10 +103,7 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
       existing.trim().length === 0 ? text : `${existing.trim()} ${text}`,
     );
 
-    setTimeout(() => {
-      syncHeights(textareaRef.current, animatedTextRef.current);
-      textareaRef.current?.focus();
-    }, 0);
+    textareaRef.current?.focus();
   }
 
   const recording = useSpeechToText(handleTranscript);
@@ -144,8 +130,6 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
     const value: string = event.target.value;
 
     setPrompt(value);
-    setPromptForAnimation(value);
-    syncHeights(textareaRef.current, animatedTextRef.current);
   }
 
   function handleSubmit(prompt: string) {
@@ -153,14 +137,14 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
       return;
     }
 
+    // Taken here rather than kept in step with every change, because what the
+    // copy has to show is the text being sent, and the box is cleared below.
+    setPromptForAnimation(prompt);
     setIsAnimating(true);
     addNewMessage(prompt, 'user');
     setPrompt('');
 
-    if (textareaRef.current) {
-      textareaRef.current.style.height = minHeight;
-      textareaRef.current.focus();
-    }
+    textareaRef.current?.focus();
 
     setTimeout(() => {
       setIsAnimating(false);
@@ -178,6 +162,20 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
     event.preventDefault();
     handleSubmit(prompt.trim());
   }
+
+  // Keyed on the value rather than done wherever the value is set. The box fills
+  // by typing, by choosing a prompt and by dictating, and the last two arrive
+  // from outside a keystroke: measuring there reads the value the box is about
+  // to lose, and a long transcript lands in a box still one line tall.
+  useLayoutEffect(() => {
+    fitToContent(textareaRef.current, textareaRef.current);
+
+    // The copy that flies away on send keeps the height it was filled at. It is
+    // measured from the box, and the box is empty by the time it takes off.
+    if (!isAnimating) {
+      fitToContent(animatedTextRef.current, textareaRef.current);
+    }
+  }, [prompt, isAnimating]);
 
   useEffect(() => {
     if (textareaRef.current && animatedTextRef.current) {
