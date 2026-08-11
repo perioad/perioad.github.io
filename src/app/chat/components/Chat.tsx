@@ -9,6 +9,8 @@ import { getAiTitle } from '../utils/getAiTitle';
 import {
   getHistoryDB,
   getHistoryTransaction,
+  getProjectsDB,
+  getProjectTransaction,
   getPromptsDB,
   getPromptTransaction,
 } from '../utils/db';
@@ -16,10 +18,12 @@ import { HistoryRecord } from '../models/db';
 import { Message } from '../models/chat';
 import { ChatModel } from 'openai/resources/index.mjs';
 import PromptSidebar from './PromptSidebar';
-import { Prompt } from '../models/db';
+import { Project, Prompt } from '../models/db';
 import ModelSelect from './ModelSelect';
 import MobileDrawer from './MobileDrawer';
 import ConfirmDialog from './ConfirmDialog';
+import ProjectPicker from './ProjectPicker';
+import ProjectSettings from './ProjectSettings';
 import ThinkingSelect from './ThinkingSelect';
 import { useMediaQuery } from '../../../hooks/useMediaQuery';
 import {
@@ -76,11 +80,24 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     getSavedPanelState('isPromptSidebarVisible'),
   );
   const [prompts, setPrompts] = useState<Prompt[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const chatInputRef = useRef<ChatInputHandle>(null);
   const [chatPendingRemoval, setChatPendingRemoval] =
     useState<HistoryRecord | null>(null);
   const [promptPendingRemoval, setPromptPendingRemoval] =
     useState<Prompt | null>(null);
+  const [projectPendingRemoval, setProjectPendingRemoval] =
+    useState<Project | null>(null);
+  const [chatPendingMove, setChatPendingMove] = useState<HistoryRecord | null>(
+    null,
+  );
+  const [projectBeingEdited, setProjectBeingEdited] = useState<Project | null>(
+    null,
+  );
+  const [isProjectEditorOpen, setIsProjectEditorOpen] = useState(false);
+  // Where the next chat will be filed. A chat has no record until its first
+  // message, so until then the project it was started from lives here.
+  const [pendingProjectId, setPendingProjectId] = useState<number | null>(null);
 
   const currentHistory = useMemo(
     () => history.find(({ id }) => id === currentChatId),
@@ -90,6 +107,19 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
   const messages = useMemo(
     () => currentHistory?.messages || [],
     [currentHistory],
+  );
+
+  // A saved chat carries its own project; an empty one is still only a promise
+  // of the project it was started from.
+  const currentProjectId = currentHistory
+    ? (currentHistory.projectId ?? null)
+    : pendingProjectId;
+
+  const projectContext = useMemo(
+    () =>
+      projects.find(({ id }) => id === currentProjectId)?.instructions.trim() ||
+      null,
+    [projects, currentProjectId],
   );
 
   useEffect(() => {
@@ -113,17 +143,31 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     fetchPrompts();
   }, []);
 
+  useEffect(() => {
+    const fetchProjects = async () => {
+      const savedProjects = await getProjectsDB();
+
+      setProjects(savedProjects);
+    };
+
+    fetchProjects();
+  }, []);
+
   const saveMessages = async (updatedMessages: Message[]) => {
     const tx = await getHistoryTransaction();
     // Read back rather than taken from the render, because the title is written
     // by a request that lands while the reply is still streaming. A snapshot
     // taken before it arrived would put `New chat` back on the next chunk.
     const saved = await tx.store.get(currentChatId);
+    // The record is written here for the first time, so this is where a chat
+    // started inside a project gets filed under it.
+    const projectId = saved?.projectId ?? pendingProjectId;
 
     await tx.store.put({
       id: currentChatId,
       title: saved?.title ?? 'New chat',
       messages: updatedMessages,
+      ...(projectId ? { projectId } : {}),
     });
 
     await tx.done;
@@ -213,11 +257,12 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     }
   }
 
-  const startNewChat = async () => {
+  const startNewChat = async (projectId: number | null = null) => {
     const allHistory = await getHistoryDB();
     const newChatId = allHistory.length > 0 ? allHistory.at(0)!.id + 1 : 1;
 
     setCurrentChatId(newChatId);
+    setPendingProjectId(projectId);
     closeDrawers();
 
     if (!isMobile) {
@@ -241,6 +286,9 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
 
   const selectChat = (id: number) => {
     setCurrentChatId(id);
+    // The chat being opened answers for itself where it is filed, and a project
+    // left over from an abandoned new chat is not that answer.
+    setPendingProjectId(null);
     closeDrawers();
 
     // Focusing here would open the keyboard over the conversation the user just
@@ -294,6 +342,104 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     closeDrawers();
   }
 
+  const saveProject = async (project: Project) => {
+    const tx = await getProjectTransaction();
+
+    if (project.id) {
+      await tx.store.put(project);
+    } else {
+      // Added without the key so the store assigns one, the way prompts are.
+      const newProject = { ...project };
+
+      delete newProject.id;
+
+      await tx.store.add(newProject);
+    }
+
+    await tx.done;
+
+    setProjects(await getProjectsDB());
+    setIsProjectEditorOpen(false);
+    setProjectBeingEdited(null);
+  };
+
+  const confirmProjectRemoval = async () => {
+    if (!projectPendingRemoval) return;
+
+    const tx = await getProjectTransaction();
+
+    await Promise.all([tx.store.delete(projectPendingRemoval.id!), tx.done]);
+
+    // The chats outlive the folder they were in. They are the conversations
+    // themselves, and removing the thing that grouped them is not a reason to
+    // take them along.
+    const historyTx = await getHistoryTransaction();
+    const filed = history.filter(
+      ({ projectId }) => projectId === projectPendingRemoval.id,
+    );
+
+    await Promise.all(
+      filed.map((chat) => {
+        const unfiled = { ...chat };
+
+        delete unfiled.projectId;
+
+        return historyTx.store.put(unfiled);
+      }),
+    );
+
+    await historyTx.done;
+
+    setProjects(await getProjectsDB());
+    setHistory(await getHistoryDB());
+    setProjectPendingRemoval(null);
+  };
+
+  const moveChat = async (chatId: number, projectId: number | null) => {
+    const tx = await getHistoryTransaction();
+    const saved = await tx.store.get(chatId);
+
+    if (saved) {
+      const moved: HistoryRecord = { ...saved };
+
+      if (projectId) {
+        moved.projectId = projectId;
+      } else {
+        delete moved.projectId;
+      }
+
+      await tx.store.put(moved);
+    }
+
+    await tx.done;
+
+    setHistory(await getHistoryDB());
+    setChatPendingMove(null);
+  };
+
+  function editProject(project: Project | null) {
+    closeDrawers();
+    setProjectBeingEdited(project);
+    setIsProjectEditorOpen(true);
+  }
+
+  function closeProjectEditor() {
+    setIsProjectEditorOpen(false);
+    setProjectBeingEdited(null);
+  }
+
+  function requestProjectRemoval(project: Project) {
+    // The settings dialog is the only way in, so it steps aside rather than
+    // stacking a second dialog on top of itself.
+    closeProjectEditor();
+    setProjectPendingRemoval(project);
+  }
+
+  function requestChatMove(chat: HistoryRecord) {
+    closeDrawers();
+    setChatPendingMove(chat);
+  }
+
   function handleSelectModel(model: ChatModel) {
     setModel(model);
   }
@@ -341,10 +487,15 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
   const historyList = (
     <History
       history={history}
+      projects={projects}
       selectChat={selectChat}
       removeChat={requestChatRemoval}
       renameChat={renameChat}
+      moveChat={requestChatMove}
       currentChatId={currentChatId}
+      createProject={() => editProject(null)}
+      editProject={editProject}
+      startProjectChat={startNewChat}
     />
   );
 
@@ -396,7 +547,9 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
           </button>
 
           <button
-            onClick={startNewChat}
+            // Wrapped, so the click event is not read as the project to file
+            // the new chat under.
+            onClick={() => startNewChat()}
             className={iconButton}
             title="New chat"
             aria-label="New chat"
@@ -434,6 +587,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
             model={model}
             thinkingLevel={thinkingLevel}
             togglePin={togglePin}
+            projectContext={projectContext}
           />
 
           <ChatInput ref={chatInputRef} addNewMessage={addNewMessage} />
@@ -507,6 +661,33 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
         onConfirm={confirmPromptRemoval}
         onCancel={() => setPromptPendingRemoval(null)}
       />
+
+      <ConfirmDialog
+        isOpen={projectPendingRemoval !== null}
+        title="remove project"
+        message={`are you sure you want to remove "${projectPendingRemoval?.title}"? its chats stay, without a project.`}
+        confirmLabel="remove"
+        onConfirm={confirmProjectRemoval}
+        onCancel={() => setProjectPendingRemoval(null)}
+      />
+
+      {isProjectEditorOpen && (
+        <ProjectSettings
+          project={projectBeingEdited}
+          onClose={closeProjectEditor}
+          onSave={saveProject}
+          onRemove={requestProjectRemoval}
+        />
+      )}
+
+      {chatPendingMove && (
+        <ProjectPicker
+          chat={chatPendingMove}
+          projects={projects}
+          onPick={moveChat}
+          onClose={() => setChatPendingMove(null)}
+        />
+      )}
     </>
   );
 }

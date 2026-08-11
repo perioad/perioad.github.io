@@ -10,6 +10,7 @@ const useAiStream = (
   onNewChunk: (content: string) => Promise<void>,
   model: ChatModel,
   thinkingLevel: ThinkingLevel,
+  projectContext: string | null,
 ) => {
   const askedForTurnRef = useRef<string | null>(null);
 
@@ -56,9 +57,17 @@ const useAiStream = (
       try {
         const stream = await openai.chat.completions.create({
           model,
-          // Reduced to the two fields the api knows. `isPinned` rides along on
-          // the same objects and would be rejected as an unrecognised key.
-          messages: messages.map(({ role, content }) => ({ role, content })),
+          messages: [
+            // Added to the request and not to the chat, so a project's
+            // instructions are never stored in the conversation, rendered in
+            // it, or replayed as something the visitor said.
+            ...(projectContext
+              ? [{ role: 'system' as const, content: projectContext }]
+              : []),
+            // Reduced to the two fields the api knows. `isPinned` rides along on
+            // the same objects and would be rejected as an unrecognised key.
+            ...messages.map(({ role, content }) => ({ role, content })),
+          ],
           stream: true,
           // Checked here as well as in the header, so that a model without
           // reasoning never carries the parameter and the 400 it would cause.
@@ -78,7 +87,14 @@ const useAiStream = (
     };
 
     ask();
-  }, [shouldRequest, messages, onNewChunk, model, thinkingLevel]);
+  }, [
+    shouldRequest,
+    messages,
+    onNewChunk,
+    model,
+    thinkingLevel,
+    projectContext,
+  ]);
 };
 
 export default useAiStream;

@@ -52,12 +52,14 @@ export default function Messages({
   model,
   thinkingLevel,
   togglePin,
+  projectContext,
 }: {
   messages: Message[];
   addNewMessage: (content: string, role: 'user' | 'assistant') => void;
   model: ChatModel;
   thinkingLevel: ThinkingLevel;
   togglePin: (index: number) => void;
+  projectContext: string | null;
 }) {
   const { containerRef, scrollToBottom, scrollToBottomNow, isAtBottom } =
     useScrollToBottom();
@@ -90,6 +92,7 @@ export default function Messages({
     addAssistantContent,
     model,
     thinkingLevel,
+    projectContext,
   );
 
   // One listener for every code block, since the buttons live inside HTML that
