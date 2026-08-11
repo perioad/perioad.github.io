@@ -49,7 +49,12 @@ export default function History({
   // it is a poor trade.
   const [renamingId, setRenamingId] = useState<number | null>(null);
   const [title, setTitle] = useState('');
-  const [expandedIds, setExpandedIds] = useState<number[]>([]);
+  // What the visitor has said about a project, against a default the project
+  // works out for itself. Recording only the answers given leaves the default
+  // free to change with the conversation, and still lets a click overrule it.
+  const [expansionOverrides, setExpansionOverrides] = useState<
+    Record<number, boolean>
+  >({});
 
   function startRename(chat: HistoryRecord) {
     setRenamingId(chat.id);
@@ -87,10 +92,8 @@ export default function History({
     }
   }
 
-  function toggleProject(id: number) {
-    setExpandedIds((ids) =>
-      ids.includes(id) ? ids.filter((open) => open !== id) : [...ids, id],
-    );
+  function toggleProject(id: number, isExpanded: boolean) {
+    setExpansionOverrides((overrides) => ({ ...overrides, [id]: !isExpanded }));
   }
 
   // A chat filed under a project that no longer exists is shown loose rather
@@ -181,10 +184,10 @@ export default function History({
         <ul className="flex flex-col gap-1">
           {projects.map((project) => {
             const chats = chatsInProject(project.id);
-            // The project holding the current chat stays open on its own, so
+            // The project holding the current chat opens on its own, so
             // selecting a chat inside one never hides what is being read.
             const isExpanded =
-              expandedIds.includes(project.id!) ||
+              expansionOverrides[project.id!] ??
               chats.some(({ id }) => id === currentChatId);
 
             return (
@@ -192,7 +195,7 @@ export default function History({
                 <div className="group flex items-center rounded-md">
                   <button
                     className="flex min-h-11 grow items-center gap-2 overflow-hidden px-2 text-left sm:min-h-9"
-                    onClick={() => toggleProject(project.id!)}
+                    onClick={() => toggleProject(project.id!, isExpanded)}
                     aria-expanded={isExpanded}
                     title={project.title}
                   >
@@ -241,9 +244,12 @@ export default function History({
         </ul>
       )}
 
-      {looseChats.length === 0 ? (
-        <p className={emptyNote}>no chats yet</p>
-      ) : (
+      {/* Nothing to say about an empty run of loose chats while the projects
+          above are full of them. The note is for a visitor with no chats at all,
+          who would otherwise be looking at a blank panel. */}
+      {history.length === 0 && <p className={emptyNote}>no chats yet</p>}
+
+      {looseChats.length > 0 && (
         <ul className="flex flex-col gap-1">{looseChats.map(chatRow)}</ul>
       )}
     </div>
