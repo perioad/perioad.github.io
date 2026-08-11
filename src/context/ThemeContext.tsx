@@ -4,11 +4,10 @@ import {
   FC,
   PropsWithChildren,
   createContext,
-  useState,
   useContext,
   useCallback,
-  useEffect,
   useMemo,
+  useSyncExternalStore,
 } from 'react';
 import { dark, light, themeKey } from '../constants/local-storage.constants';
 
@@ -32,23 +31,34 @@ export const useThemeContext = () => {
   return context;
 };
 
+// The class on `<html>` is the theme: the head script puts it there before
+// React runs and the stylesheet reads it. Watching the class rather than
+// keeping a copy in state is what stops the two from disagreeing.
+function subscribe(onChange: () => void) {
+  const observer = new MutationObserver(onChange);
+
+  observer.observe(document.documentElement, { attributeFilter: ['class'] });
+
+  return () => observer.disconnect();
+}
+
+function getSnapshot() {
+  return document.documentElement.classList.contains(dark);
+}
+
+const getServerSnapshot = () => false;
+
 export const ThemeContextProvider: FC<PropsWithChildren> = ({ children }) => {
-  const [isDarkTheme, setIsDarkTheme] = useState(false);
+  const isDarkTheme = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot,
+  );
 
   const toggleTheme = useCallback(() => {
-    document.documentElement.classList.toggle(dark);
+    const isDarkNow = document.documentElement.classList.toggle(dark);
 
-    setIsDarkTheme((prev) => {
-      localStorage.setItem(themeKey, prev ? light : dark);
-
-      return !prev;
-    });
-  }, []);
-
-  useEffect(() => {
-    if (document.documentElement.classList.contains(dark)) {
-      setIsDarkTheme(true);
-    }
+    localStorage.setItem(themeKey, isDarkNow ? dark : light);
   }, []);
 
   const contextValue = useMemo(

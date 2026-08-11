@@ -4,11 +4,9 @@ import {
   FC,
   PropsWithChildren,
   createContext,
-  useState,
   useContext,
   useMemo,
-  useEffect,
-  useCallback,
+  useSyncExternalStore,
 } from 'react';
 import {
   allowed,
@@ -36,37 +34,52 @@ export const useSpeakerContext = () => {
   return context;
 };
 
+// The stored preference is the answer, so it is read straight out of storage
+// rather than copied into state on mount. `null` means the visitor has not been
+// asked yet, which is what the speaker prompt looks for.
+const listeners = new Set<() => void>();
+
+function subscribe(onChange: () => void) {
+  listeners.add(onChange);
+
+  return () => {
+    listeners.delete(onChange);
+  };
+}
+
+function getSnapshot() {
+  const speaker = localStorage.getItem(speakerKey);
+
+  return speaker ? speaker === allowed : null;
+}
+
+// Sound is off in the prerendered HTML, and a visitor who has already allowed
+// it is not the one this frame is shown to.
+const getServerSnapshot = () => false;
+
+function writeSpeaker(value: boolean | null) {
+  if (value === null) {
+    localStorage.removeItem(speakerKey);
+  } else {
+    localStorage.setItem(speakerKey, value ? allowed : disallowed);
+  }
+
+  listeners.forEach((listener) => listener());
+}
+
 export const SpeakerContextProvider: FC<PropsWithChildren> = ({ children }) => {
-  const [isSpeakerAllowed, _setIsSpeakerAllowed] = useState<boolean | null>(
-    false,
+  const isSpeakerAllowed = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot,
   );
-
-  const setIsSpeakerAllowed = useCallback((value: boolean | null) => {
-    if (value !== null) {
-      localStorage.setItem(speakerKey, value ? allowed : disallowed);
-    }
-
-    _setIsSpeakerAllowed(value);
-  }, []);
 
   const contextValue = useMemo(() => {
     return {
       isSpeakerAllowed,
-      setIsSpeakerAllowed,
+      setIsSpeakerAllowed: writeSpeaker,
     };
-  }, [isSpeakerAllowed, setIsSpeakerAllowed]);
-
-  useEffect(() => {
-    const speaker = localStorage.getItem(speakerKey);
-
-    if (!speaker) {
-      setIsSpeakerAllowed(null);
-
-      return;
-    }
-
-    setIsSpeakerAllowed(speaker === allowed);
-  }, [setIsSpeakerAllowed]);
+  }, [isSpeakerAllowed]);
 
   return (
     <SpeakerContext.Provider value={contextValue}>

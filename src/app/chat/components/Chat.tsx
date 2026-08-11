@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { KeyRound, PanelLeft, PanelRight, SquarePen } from 'lucide-react';
-import ChatInput from './ChatInput';
+import ChatInput, { ChatInputHandle } from './ChatInput';
 import History from './History';
 import Messages from './Messages';
 import { getAiTitle } from '../utils/getAiTitle';
@@ -76,8 +76,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     getSavedPanelState('isPromptSidebarVisible'),
   );
   const [prompts, setPrompts] = useState<Prompt[]>([]);
-  const [chosenPrompt, setChosenPrompt] = useState<Prompt | null>(null);
-  const [shouldFocusInput, setShouldFocusInput] = useState(false);
+  const chatInputRef = useRef<ChatInputHandle>(null);
   const [chatPendingRemoval, setChatPendingRemoval] =
     useState<HistoryRecord | null>(null);
   const [promptPendingRemoval, setPromptPendingRemoval] =
@@ -222,7 +221,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     closeDrawers();
 
     if (!isMobile) {
-      setShouldFocusInput(true);
+      chatInputRef.current?.focus();
     }
   };
 
@@ -247,7 +246,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     // Focusing here would open the keyboard over the conversation the user just
     // asked to read.
     if (!isMobile) {
-      setShouldFocusInput(true);
+      chatInputRef.current?.focus();
     }
   };
 
@@ -291,8 +290,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
   };
 
   function choosePrompt(prompt: Prompt) {
-    setChosenPrompt(prompt);
-    setShouldFocusInput(true);
+    chatInputRef.current?.insertPrompt(prompt.content);
     closeDrawers();
   }
 
@@ -438,12 +436,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
             togglePin={togglePin}
           />
 
-          <ChatInput
-            addNewMessage={addNewMessage}
-            chosenPrompt={chosenPrompt}
-            shouldFocus={shouldFocusInput}
-            onFocused={() => setShouldFocusInput(false)}
-          />
+          <ChatInput ref={chatInputRef} addNewMessage={addNewMessage} />
         </div>
 
         {!isMobile && (

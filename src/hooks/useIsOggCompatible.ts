@@ -1,13 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useClientValue } from './useClientValue';
+
+// Read once and kept: this is called on every render, and building an `Audio`
+// each time to ask the same question would be wasteful.
+let isOggCompatible: boolean | null = null;
+
+function getIsOggCompatible() {
+  if (isOggCompatible === null) {
+    isOggCompatible = new Audio().canPlayType('audio/ogg') !== '';
+  }
+
+  return isOggCompatible;
+}
 
 export function useIsOggCompatible() {
-  const [isCompatible, setIsCompatible] = useState(false);
-
-  useEffect(() => {
-    const audioTest = new Audio();
-
-    setIsCompatible(audioTest.canPlayType('audio/ogg') !== '');
-  }, []);
-
-  return isCompatible;
+  return useClientValue(getIsOggCompatible, false);
 }

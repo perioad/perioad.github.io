@@ -1,27 +1,28 @@
 'use client';
 
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect } from 'react';
 import { useIsWaving } from '../../hooks/useIsWaving';
 import { AvatarVideo } from '../avatar-video/AvatarVideo';
 import { Spinner } from '../spinner/Spinner';
 import { WavingProps } from './Waving.model';
 
 export const Waving: FC<WavingProps> = ({ onReady }) => {
-  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(
-    null,
-  );
-  const [isWaving, isAccessGranted, isReady] = useIsWaving(videoElement, 500);
+  const { isWaving, isAccessGranted, isReady, attachVideo } = useIsWaving(500);
 
   const isInteractionReady = isAccessGranted === true && isReady === true;
   const isCameraDenied = isAccessGranted === false;
+  // The camera was granted but the hand tracking itself could not start, which
+  // is its own thing to say: blaming the camera would send people to a
+  // permission dialog that is already set the way it needs to be.
+  const isTrackingUnavailable = isReady === false;
   const messageClassName =
     ' w-3/4 mx-2 mt-5 text-center absolute left-1/2 transform -translate-x-1/2 bottom-5 dark:bg-zinc-900 bg-white animate-appear';
 
   useEffect(() => {
-    if (isInteractionReady || isCameraDenied) {
+    if (isInteractionReady || isCameraDenied || isTrackingUnavailable) {
       onReady();
     }
-  }, [isInteractionReady, isCameraDenied, onReady]);
+  }, [isInteractionReady, isCameraDenied, isTrackingUnavailable, onReady]);
 
   return (
     <>
@@ -35,9 +36,7 @@ export const Waving: FC<WavingProps> = ({ onReady }) => {
         <AvatarVideo type="waving" isVisible={isWaving} />
 
         <video
-          ref={(node) => {
-            node && setVideoElement(node);
-          }}
+          ref={attachVideo}
           className="absolute -z-50 opacity-0"
           autoPlay
           playsInline
@@ -54,6 +53,12 @@ export const Waving: FC<WavingProps> = ({ onReady }) => {
         <p className={messageClassName}>
           either there is no camera on your device or permission wasn&apos;t
           granted :c
+        </p>
+      )}
+
+      {isTrackingUnavailable && (
+        <p className={messageClassName}>
+          your browser can&apos;t run the hand tracking, so this one is on me :c
         </p>
       )}
     </>

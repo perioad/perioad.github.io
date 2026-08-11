@@ -6,23 +6,25 @@ import Chat from './components/Chat';
 import { Source_Code_Pro } from 'next/font/google';
 import { Spinner } from '../../components/spinner/Spinner';
 import { useVisualViewport } from '../../hooks/useVisualViewport';
+import { useClientValue } from '../../hooks/useClientValue';
 
 const font = Source_Code_Pro({ weight: '400', subsets: ['latin'] });
 
+const ready = () => true;
+const hasApiKey = () => localStorage.getItem('key') !== null;
+
 export default function ChatPage() {
-  const [isKeyModalDisplayed, setIsKeyModalDisplayed] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
+  // Nothing here can be prerendered: the key, the chats and the viewport all
+  // live in the browser, so the spinner stands in until it is there.
+  const isInitialized = useClientValue(ready, false);
+  // Asking for a key is the default rather than something an effect switches
+  // on, so the stored key decides and the state only records the visitor
+  // overruling it by closing or reopening the dialog.
+  const hasKey = useClientValue(hasApiKey, true);
+  const [isKeyModalOpen, setIsKeyModalOpen] = useState<boolean | null>(null);
   const viewport = useVisualViewport();
 
-  useEffect(() => {
-    setIsInitialized(true);
-
-    const apiKey = localStorage.getItem('key');
-
-    if (!apiKey) {
-      setIsKeyModalDisplayed(true);
-    }
-  }, []);
+  const isKeyModalDisplayed = isKeyModalOpen ?? !hasKey;
 
   useEffect(() => {
     // The chat fills the screen and scrolls internally, so a scrollable document
@@ -38,11 +40,11 @@ export default function ChatPage() {
   }, []);
 
   function openKeyModal() {
-    setIsKeyModalDisplayed(true);
+    setIsKeyModalOpen(true);
   }
 
   function closeModal() {
-    setIsKeyModalDisplayed(false);
+    setIsKeyModalOpen(false);
   }
 
   if (!isInitialized) {

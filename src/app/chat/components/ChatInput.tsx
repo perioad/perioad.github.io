@@ -1,43 +1,60 @@
-import { ChangeEvent, KeyboardEvent, useRef, useState, useEffect } from 'react';
+import {
+  ChangeEvent,
+  KeyboardEvent,
+  Ref,
+  useImperativeHandle,
+  useRef,
+  useState,
+  useEffect,
+} from 'react';
 import { ArrowUp, Mic, Square } from 'lucide-react';
-import { Prompt } from '../models/db';
 import { Spinner } from '../../../components/spinner/Spinner';
 import { useSpeechToText } from '../hooks/useSpeechToText';
 
+export type ChatInputHandle = {
+  focus: () => void;
+  insertPrompt: (content: string) => void;
+};
+
 interface ChatInputProps {
   addNewMessage: (content: string, role: 'user' | 'assistant') => Promise<void>;
-  chosenPrompt: Prompt | null;
-  shouldFocus: boolean;
-  onFocused: () => void;
+  ref?: Ref<ChatInputHandle>;
 }
 
-export default function ChatInput({
-  addNewMessage,
-  chosenPrompt,
-  shouldFocus,
-  onFocused,
-}: ChatInputProps) {
+function fitToContent(
+  element: HTMLTextAreaElement | HTMLDivElement | null,
+  textarea: HTMLTextAreaElement | null,
+) {
+  if (!element || !textarea) {
+    return;
+  }
+
+  // A flat 200px is taller than the space left above an open keyboard on a
+  // small phone, where it would push the conversation off the top.
+  const visibleHeight = window.visualViewport?.height ?? window.innerHeight;
+  const maxHeight = Math.min(200, visibleHeight * 0.4);
+
+  element.style.height = 'auto';
+  const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+  element.style.height = `${newHeight}px`;
+}
+
+// The overlay that flies away on send is a copy of the box, so the two are
+// always sized together.
+function syncHeights(
+  textarea: HTMLTextAreaElement | null,
+  animated: HTMLDivElement | null,
+) {
+  fitToContent(textarea, textarea);
+  fitToContent(animated, textarea);
+}
+
+export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const animatedTextRef = useRef<HTMLDivElement>(null);
   const [prompt, setPrompt] = useState('');
   const [promptForAnimation, setPromptForAnimation] = useState('');
   const [isAnimating, setIsAnimating] = useState(false);
-
-  const adjustElementHeight = (
-    ref: React.RefObject<HTMLTextAreaElement | HTMLDivElement | null>,
-  ) => {
-    if (ref.current && textareaRef.current) {
-      // A flat 200px is taller than the space left above an open keyboard on a
-      // small phone, where it would push the conversation off the top.
-      const visibleHeight = window.visualViewport?.height ?? window.innerHeight;
-      const maxHeight = Math.min(200, visibleHeight * 0.4);
-
-      ref.current.style.height = 'auto';
-      const scrollHeight = textareaRef.current.scrollHeight;
-      const newHeight = Math.min(scrollHeight, maxHeight);
-      ref.current.style.height = `${newHeight}px`;
-    }
-  };
 
   const handleTextareaScroll = () => {
     if (textareaRef.current && animatedTextRef.current) {
@@ -45,25 +62,40 @@ export default function ChatInput({
     }
   };
 
-  useEffect(() => {
-    if (chosenPrompt) {
-      const value =
-        prompt.length === 0
-          ? `${chosenPrompt.content}\n`
-          : `${chosenPrompt.content}\n${prompt}`;
+  // Choosing a prompt and asking for focus are things that happen to the input,
+  // not state it should be kept in step with. As props they needed an effect to
+  // notice the change and a second one to reset the signal, and picking the
+  // same prompt twice in a row changed nothing to notice.
+  useImperativeHandle(
+    ref,
+    () => ({
+      focus() {
+        textareaRef.current?.focus();
+      },
+      insertPrompt(content: string) {
+        setPrompt((existing) =>
+          existing.length === 0 ? `${content}\n` : `${content}\n${existing}`,
+        );
 
-      setPrompt(value);
+        // After the value has landed in the DOM, so the box can be sized to it
+        // and the caret put at the end.
+        setTimeout(() => {
+          syncHeights(textareaRef.current, animatedTextRef.current);
 
-      setTimeout(() => {
-        adjustElementHeight(textareaRef);
-        adjustElementHeight(animatedTextRef);
-        if (textareaRef.current) {
-          textareaRef.current.focus();
-          textareaRef.current.setSelectionRange(value.length, value.length);
-        }
-      }, 0);
-    }
-  }, [chosenPrompt]);
+          const textarea = textareaRef.current;
+
+          if (textarea) {
+            textarea.focus();
+            textarea.setSelectionRange(
+              textarea.value.length,
+              textarea.value.length,
+            );
+          }
+        }, 0);
+      },
+    }),
+    [],
+  );
 
   useEffect(() => {
     // Focusing on mount throws up the on-screen keyboard before the user has
@@ -83,8 +115,7 @@ export default function ChatInput({
     );
 
     setTimeout(() => {
-      adjustElementHeight(textareaRef);
-      adjustElementHeight(animatedTextRef);
+      syncHeights(textareaRef.current, animatedTextRef.current);
       textareaRef.current?.focus();
     }, 0);
   }
@@ -114,20 +145,7 @@ export default function ChatInput({
 
     setPrompt(value);
     setPromptForAnimation(value);
-    adjustElementHeight(textareaRef);
-    adjustElementHeight(animatedTextRef);
-  }
-
-  // Enter sends on a keyboard, where Shift+Enter is the well known way to get a
-  // newline. On a touch keyboard the return key is the only way to break a
-  // line, so it is left alone and the send button does the work.
-  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key !== 'Enter' || event.shiftKey) return;
-
-    if (window.matchMedia('(pointer: coarse)').matches) return;
-
-    event.preventDefault();
-    handleSubmit(prompt.trim());
+    syncHeights(textareaRef.current, animatedTextRef.current);
   }
 
   function handleSubmit(prompt: string) {
@@ -149,12 +167,17 @@ export default function ChatInput({
     }, 500);
   }
 
-  useEffect(() => {
-    if (shouldFocus && textareaRef.current) {
-      textareaRef.current.focus();
-      onFocused();
-    }
-  }, [shouldFocus, onFocused]);
+  // Enter sends on a keyboard, where Shift+Enter is the well known way to get a
+  // newline. On a touch keyboard the return key is the only way to break a
+  // line, so it is left alone and the send button does the work.
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== 'Enter' || event.shiftKey) return;
+
+    if (window.matchMedia('(pointer: coarse)').matches) return;
+
+    event.preventDefault();
+    handleSubmit(prompt.trim());
+  }
 
   useEffect(() => {
     if (textareaRef.current && animatedTextRef.current) {

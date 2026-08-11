@@ -7,30 +7,28 @@ export const useIsOnScreen = (
   const [isIntersected, setIntersected] = useState(false);
 
   useEffect(() => {
-    if (isIntersected) {
+    const current = ref.current;
+
+    if (!current) {
       return;
     }
 
-    const current = ref.current;
+    // Disconnected on the first hit rather than re-run on the state it sets,
+    // which is what kept this one-shot before.
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setIntersected(true);
+          observer.disconnect();
         }
       },
-      {
-        rootMargin,
-      },
+      { rootMargin },
     );
-    if (current) {
-      observer.observe(current);
-    }
-    return () => {
-      if (current) {
-        observer.unobserve(current);
-      }
-    };
-  }, [isIntersected]);
+
+    observer.observe(current);
+
+    return () => observer.disconnect();
+  }, [ref, rootMargin]);
 
   return isIntersected;
 };

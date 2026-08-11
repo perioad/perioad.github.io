@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { useSpeakerContext } from '../../context/SpeakerContext';
 import { useAudioEffect } from '../../hooks/useAudioEffect';
+import { playAudio } from '../../utils/audio.utils';
 
 export const SpeakerPrompt = memo(function SpeakerPrompt() {
   const { isSpeakerAllowed, setIsSpeakerAllowed } = useSpeakerContext();
@@ -10,7 +11,7 @@ export const SpeakerPrompt = memo(function SpeakerPrompt() {
   );
 
   function handleAllowSpeaker() {
-    tadaSound.current?.play();
+    playAudio(tadaSound.current);
     setIsSpeakerAllowed(true);
   }
 

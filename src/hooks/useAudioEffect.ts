@@ -1,13 +1,20 @@
 import { useEffect } from 'react';
 import { useSpeakerContext } from '../context/SpeakerContext';
-
-const audioRegistry = new Map<string, { current: HTMLAudioElement | null }>();
+import { getAudioSlot } from '../utils/audio-registry';
 
 export const useAudioEffect = (src: string, ignorePermissions = false) => {
   const { isSpeakerAllowed } = useSpeakerContext();
 
   useEffect(() => {
-    const audioRef = audioRegistry.get(src)!;
+    // An empty source is how a caller says "not yet", as the speaker prompt
+    // does while it is hidden. `new Audio('')` points the element at the page
+    // itself, which has no audio to decode, and WebKit rejects any play() on it
+    // with NotSupportedError.
+    if (!src) {
+      return;
+    }
+
+    const audioRef = getAudioSlot(src);
 
     if (!audioRef.current) {
       if (ignorePermissions || isSpeakerAllowed) {
@@ -29,9 +36,5 @@ export const useAudioEffect = (src: string, ignorePermissions = false) => {
     }
   }, [src, isSpeakerAllowed, ignorePermissions]);
 
-  if (!audioRegistry.has(src)) {
-    audioRegistry.set(src, { current: null });
-  }
-
-  return audioRegistry.get(src)!;
+  return getAudioSlot(src);
 };

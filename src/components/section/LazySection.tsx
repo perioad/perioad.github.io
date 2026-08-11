@@ -7,15 +7,15 @@ type Props = {
   id: string;
 };
 
+const Loader = () => (
+  <div className="mx-auto h-20 w-20">
+    <Spinner />
+  </div>
+);
+
 export const LazySection: FC<PropsWithChildren<Props>> = ({ id, children }) => {
   const sectionRef = useRef<HTMLElement>(null);
   const isIntersected = useIsOnScreen(sectionRef);
-
-  const Loader = () => (
-    <div className="mx-auto h-20 w-20">
-      <Spinner />
-    </div>
-  );
 
   return (
     <Section ref={sectionRef} id={id}>

@@ -28,16 +28,6 @@ export default function PromptSidebar({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
 
-  const handleAddOrUpdatePrompt = () => {
-    if (editingPrompt) {
-      updatePrompt(editingPrompt.id!, title.trim(), content.trim());
-    } else {
-      addPrompt(title.trim(), content.trim());
-    }
-
-    closeEditor();
-  };
-
   function openEditor(prompt: Prompt | null) {
     setEditingPrompt(prompt);
     setTitle(prompt?.title ?? '');
@@ -52,6 +42,16 @@ export default function PromptSidebar({
     setTitle('');
     setContent('');
   }
+
+  const handleAddOrUpdatePrompt = () => {
+    if (editingPrompt) {
+      updatePrompt(editingPrompt.id!, title.trim(), content.trim());
+    } else {
+      addPrompt(title.trim(), content.trim());
+    }
+
+    closeEditor();
+  };
 
   return (
     <>

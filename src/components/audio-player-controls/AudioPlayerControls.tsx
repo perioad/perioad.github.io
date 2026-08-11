@@ -9,6 +9,7 @@ import { useAudioEffect } from '../../hooks/useAudioEffect';
 import { usePlayStateContext } from '../../context/PlayStateContext';
 import { useSpeakerContext } from '../../context/SpeakerContext';
 import { useIsOggCompatible } from '../../hooks/useIsOggCompatible';
+import { getAudioSlot } from '../../utils/audio-registry';
 import { Spinner } from '../spinner/Spinner';
 
 type Props = {
@@ -29,7 +30,17 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
   const { isSpeakerAllowed, setIsSpeakerAllowed } = useSpeakerContext();
   const format = isOggCompatible ? 'ogg' : 'mp3';
   const prevMusicAudio = useRef<HTMLAudioElement | null>(null);
-  const musicAudio = useAudioEffect(`${src}.${format}`, true);
+  const musicSrc = `${src}.${format}`;
+
+  // This is the one caller that drives the element rather than just playing it:
+  // seeking, volume and mute are all writes. The hook keeps the element alive
+  // and the registry is asked for it at the moment of use, because a value that
+  // render hands to a callback is React's to hold still, not ours to write to.
+  useAudioEffect(musicSrc, true);
+
+  function getMusic() {
+    return getAudioSlot(musicSrc).current;
+  }
 
   const pressedButton = 'scale-[0.99] shadow-player-button';
   const playButtonStyles = isPlaying
@@ -50,8 +61,10 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
   // effect that syncs `muted` after the next render means playback starts muted
   // and Safari stops it again as soon as the effect runs.
   function unmuteMusic() {
-    if (musicAudio.current) {
-      musicAudio.current.muted = false;
+    const music = getMusic();
+
+    if (music) {
+      music.muted = false;
     }
   }
 
@@ -66,13 +79,13 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
     unmuteMusic();
 
     playAudio(buttonDownSound.current);
-    playAudio(musicAudio.current);
+    playAudio(getMusic());
     setIsPlaying(true);
   }
 
   function handlePauseAudio() {
     playAudio(buttonUpSound.current);
-    musicAudio.current?.pause();
+    getMusic()?.pause();
     setIsPlaying(false);
   }
 
@@ -90,7 +103,7 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
   }
 
   function handleDurationSliderChange() {
-    const audioElement = musicAudio.current;
+    const audioElement = getMusic();
     const durationRange = durationRangeRef.current;
 
     if (durationRange?.value) {
@@ -103,7 +116,7 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
   }
 
   function handleVolumeSliderChange() {
-    const audioElement = musicAudio.current;
+    const audioElement = getMusic();
     const volumeRange = volumeRangeRef.current;
 
     if (audioElement && volumeRange) {
@@ -116,7 +129,7 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
   }
 
   useEffect(() => {
-    const audioElement = musicAudio.current;
+    const audioElement = getAudioSlot(musicSrc).current;
 
     if (!audioElement) {
       return;
@@ -126,14 +139,12 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
       setIsPlaying(false);
       setCurrentTime(0);
 
-      if (musicAudio.current) {
-        musicAudio.current.currentTime = 0;
-      }
+      audioElement!.currentTime = 0;
     }
 
     const handleTimeUpdate = throttle(function () {
-      if (typeof musicAudio.current?.duration === 'number') {
-        setCurrentTime(Math.floor(musicAudio.current.currentTime));
+      if (typeof audioElement!.duration === 'number') {
+        setCurrentTime(Math.floor(audioElement!.currentTime));
       }
     }, 1000);
 
@@ -145,7 +156,7 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
     if (isPlaying) {
       playAudio(audioElement);
     }
-  }, [musicAudio, isSpeakerAllowed, volume, isPlaying, setIsPlaying]);
+  }, [musicSrc, isSpeakerAllowed, volume, isPlaying, setIsPlaying]);
 
   // Duration belongs to the track, so it is read here rather than in the
   // playback effect above: that effect also depends on mute, volume and play
@@ -154,20 +165,16 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
   // duration as an estimate that grows with what it has decoded, so muting ten
   // minutes in relabelled the track as ten minutes long.
   useEffect(() => {
-    const audioElement = musicAudio.current;
+    const audioElement = getAudioSlot(musicSrc).current;
 
     if (!audioElement) {
       return;
     }
 
     function readDuration() {
-      const seconds = musicAudio.current?.duration;
+      const seconds = audioElement!.duration;
 
-      setDuration(
-        seconds !== undefined && Number.isFinite(seconds)
-          ? Math.floor(seconds)
-          : null,
-      );
+      setDuration(Number.isFinite(seconds) ? Math.floor(seconds) : null);
     }
 
     readDuration();
@@ -179,7 +186,7 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
       audioElement.removeEventListener('loadedmetadata', readDuration);
       audioElement.removeEventListener('durationchange', readDuration);
     };
-  }, [musicAudio]);
+  }, [musicSrc]);
 
   useEffect(() => {
     if (prevMusicAudio.current) {
@@ -187,8 +194,8 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
       prevMusicAudio.current.currentTime = 0;
     }
 
-    prevMusicAudio.current = musicAudio.current;
-  }, [musicAudio]);
+    prevMusicAudio.current = getAudioSlot(musicSrc).current;
+  }, [musicSrc]);
 
   const durationElement =
     duration === null ? (

@@ -1,13 +1,7 @@
 'use client';
 
-import {
-  FC,
-  PropsWithChildren,
-  createContext,
-  useState,
-  useContext,
-  useEffect,
-} from 'react';
+import { FC, PropsWithChildren, createContext, useContext } from 'react';
+import { useClientValue } from '../hooks/useClientValue';
 
 type AliveContextProps = {
   isAppAlive: boolean;
@@ -27,12 +21,12 @@ export const useAliveContext = () => {
   return context;
 };
 
-export const AliveContextProvider: FC<PropsWithChildren> = ({ children }) => {
-  const [isAppAlive, setIsAppAlive] = useState(false);
+// "Alive" only ever means that the browser has taken over from the prerendered
+// HTML, so the answer is a constant on each side of hydration.
+const alive = () => true;
 
-  useEffect(() => {
-    setIsAppAlive(true);
-  }, []);
+export const AliveContextProvider: FC<PropsWithChildren> = ({ children }) => {
+  const isAppAlive = useClientValue(alive, false);
 
   const contextValue = {
     isAppAlive,
