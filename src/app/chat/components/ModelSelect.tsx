@@ -155,7 +155,7 @@ const ModelSelect: React.FC<ModelSelectProps> = ({ model, setModel }) => {
     ids.filter((id) => id !== model);
 
   return (
-    <div className="relative flex min-w-0 items-center gap-2">
+    <div className="flex min-w-0 items-center gap-2">
       <select
         // Allowed to shrink past its width so that a narrow screen truncates the
         // model name instead of pushing the header controls off the edge.
@@ -179,8 +179,10 @@ const ModelSelect: React.FC<ModelSelectProps> = ({ model, setModel }) => {
         />
       </select>
 
+      {/* In the flow rather than hung off the right edge, which used to be empty
+          space and is now the thinking level. */}
       {isLoading && (
-        <div className="absolute top-1/2 -right-8 h-5 w-5 -translate-y-1/2">
+        <div className="h-5 w-5 mx-2 shrink-0">
           <Spinner />
         </div>
       )}
