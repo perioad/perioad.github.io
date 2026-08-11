@@ -120,6 +120,15 @@
   margin-left: 1.5rem;
 }
 
+/* The user's turn is right aligned, which suits prose but not content whose
+   left edge carries the structure: code lines would no longer line up, and a
+   list would leave its bullets stranded across the row from the text. */
+.markdown pre,
+.markdown table,
+.markdown li {
+  text-align: left;
+}
+
 /* `block` is what gives the table its own scroll area instead of forcing the
    whole conversation sideways on a narrow screen. */
 .markdown table {

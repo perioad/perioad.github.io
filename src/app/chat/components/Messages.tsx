@@ -128,9 +128,9 @@ export default function Messages({
           {messages.map((message, i) => (
             <Fragment key={i}>
               {message.role === 'user' && (
-                <div className="group mb-5 flex w-full flex-col items-end border-r-2 border-sky-500 pr-3 pl-6 leading-6 last:mb-0 sm:pr-5 sm:pl-20">
+                <div className="group mb-5 flex w-full flex-col items-end border-r-2 border-sky-500 pr-3 leading-6 last:mb-0 sm:pr-5">
                   <div
-                    className="markdown w-fit wrap-break-word"
+                    className="markdown w-full text-right wrap-break-word"
                     dangerouslySetInnerHTML={{
                       __html: renderMarkdown(message.content),
                     }}
@@ -141,7 +141,7 @@ export default function Messages({
               )}
 
               {message.role === 'assistant' && (
-                <div className="group mb-5 w-full border-l-2 border-green-500 pr-6 pl-3 leading-6 last:mb-0 sm:pr-20 sm:pl-5">
+                <div className="group mb-5 w-full border-l-2 border-green-500 pl-3 leading-6 last:mb-0 sm:pl-5">
                   <div
                     className="markdown wrap-break-word"
                     dangerouslySetInnerHTML={{
