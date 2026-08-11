@@ -219,7 +219,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
           {'⇦'}
         </button>
       </header>
-      <section className="flex flex-grow overflow-y-auto">
+      <section className="flex grow overflow-y-auto">
         <History
           history={history}
           selectChat={selectChat}
@@ -228,9 +228,9 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
           isVisible={isHistoryVisible}
         />
         <div
-          className={`${isHistoryVisible ? 'hidden sm:flex' : ''} flex h-full flex-grow flex-col`}
+          className={`${isHistoryVisible ? 'hidden sm:flex' : ''} flex h-full grow flex-col`}
         >
-          <div className="z-10 flex justify-center gap-5 py-5 backdrop-blur-sm">
+          <div className="z-10 flex justify-center gap-5 py-5 backdrop-blur-xs">
             <button
               className="rounded-md bg-slate-700 px-3 py-1 transition-all hover:bg-slate-800"
               onClick={openKeyModal}

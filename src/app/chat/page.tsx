@@ -32,7 +32,7 @@ export default function ChatPage() {
 
   if (!isInitialized) {
     return (
-      <main className="w-dvh flex h-dvh items-center justify-center">
+      <main className="flex h-dvh w-dvw items-center justify-center">
         <div className="h-20 w-20">
           <Spinner />
         </div>
@@ -42,7 +42,7 @@ export default function ChatPage() {
 
   return (
     <main
-      className={`${font.className} w-dvh relative flex h-dvh flex-col text-sm`}
+      className={`${font.className} relative flex h-dvh w-dvw flex-col text-sm`}
     >
       <AskKeyModal closeModal={closeModal} isOpen={isKeyModalDisplayed} />
 

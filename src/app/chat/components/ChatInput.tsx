@@ -21,7 +21,7 @@ export default function ChatInput({
   const [isAnimating, setIsAnimating] = useState(false);
 
   const adjustElementHeight = (
-    ref: React.RefObject<HTMLTextAreaElement | HTMLDivElement>,
+    ref: React.RefObject<HTMLTextAreaElement | HTMLDivElement | null>,
   ) => {
     if (ref.current && textareaRef.current) {
       const maxHeight = 200;
@@ -128,16 +128,16 @@ export default function ChatInput({
       <div
         ref={animatedTextRef}
         className={`pointer-events-none absolute bottom-0 left-5 w-full overflow-y-auto p-3 ${
-          isAnimating ? 'animate-fly-up visible' : 'invisible'
+          isAnimating ? 'visible animate-fly-up' : 'invisible'
         }`}
       >
-        <pre className="whitespace-pre-wrap break-words">
+        <pre className="wrap-break-word whitespace-pre-wrap">
           {promptTrimmedForAnimation}
         </pre>
       </div>
 
       <button
-        className={`${isEmptyPrompt ? 'w-0 scale-0' : ''} ml-5 h-[52px] w-[52px] flex-shrink-0 self-end rounded-md bg-slate-100 text-xl transition-all focus-visible:w-[52px] focus-visible:scale-100 aria-disabled:grayscale dark:bg-slate-800`}
+        className={`${isEmptyPrompt ? 'w-0 scale-0' : ''} ml-5 h-[52px] w-[52px] shrink-0 self-end rounded-md bg-slate-100 text-xl transition-all focus-visible:w-[52px] focus-visible:scale-100 aria-disabled:grayscale dark:bg-slate-800`}
         aria-disabled={isEmptyPrompt}
         onClick={() => handleSubmit(promptTrimmed)}
       >

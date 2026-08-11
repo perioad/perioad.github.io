@@ -10,7 +10,7 @@ export const General = memo(function General() {
     <Section>
       <Bubble />
 
-      <div className=" flex flex-col items-center gap-5">
+      <div className="flex flex-col items-center gap-5">
         <div className="flex flex-col gap-2 sm:gap-5">
           <h1 className="text-3xl font-bold sm:text-5xl">
             <Emphasize>perioad</Emphasize> welcomes you

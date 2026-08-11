@@ -5,7 +5,7 @@ import { HeaderLoader } from './HeaderLoader';
 
 export const Header = memo(function Header() {
   return (
-    <header className="fixed z-50 flex w-full justify-between px-5 py-3 backdrop-blur-sm">
+    <header className="fixed z-50 flex w-full justify-between px-5 py-3 backdrop-blur-xs">
       <Socials />
 
       <HeaderLoader />

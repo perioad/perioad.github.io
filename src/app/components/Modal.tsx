@@ -36,7 +36,7 @@ export default function Modal({
       <header>
         <h1 className="mb-3 text-xl">{title}</h1>
         <button
-          className="absolute right-5 top-3 transition-all hover:scale-110"
+          className="absolute top-3 right-5 transition-all hover:scale-110"
           onClick={onClose}
         >
           ❌

@@ -13,8 +13,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // `suppressHydrationWarning`: the head script below sets the `dark` class
+  // before hydration to avoid a flash of the wrong theme, so the client `<html>`
+  // never matches the server markup. Suppression stops one level deep, so real
+  // mismatches inside the tree are still reported.
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{

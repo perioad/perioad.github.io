@@ -54,11 +54,11 @@ export default function PromptSidebar({
 
   return (
     <aside
-      className={`${isVisible ? 'w-full sm:w-56' : 'w-0'} h-full flex-shrink-0 overflow-y-auto border-l border-l-slate-800 text-base transition-all sm:text-sm`}
+      className={`${isVisible ? 'w-full sm:w-56' : 'w-0'} h-full shrink-0 overflow-y-auto border-l border-l-slate-800 text-base transition-all sm:text-sm`}
     >
       <ul className="flex flex-col gap-3 p-3">
         <button
-          className="h-auto w-full items-stretch overflow-hidden overflow-ellipsis whitespace-nowrap rounded-md px-2 py-3 text-2xl transition-all hover:bg-slate-800 sm:h-9 sm:py-0 dark:bg-slate-700 "
+          className="h-auto w-full items-stretch overflow-hidden rounded-md px-2 py-3 text-2xl text-ellipsis whitespace-nowrap transition-all hover:bg-slate-800 sm:h-9 sm:py-0 dark:bg-slate-700"
           onClick={() => setIsModalOpen(true)}
         >
           +
@@ -67,10 +67,10 @@ export default function PromptSidebar({
         {prompts.map((prompt) => (
           <li
             key={prompt.id}
-            className={`group relative flex h-auto w-full items-stretch overflow-hidden overflow-ellipsis whitespace-nowrap rounded-md px-2 py-3 transition-all sm:h-9 sm:py-0 dark:bg-slate-800`}
+            className={`group relative flex h-auto w-full items-stretch overflow-hidden rounded-md px-2 py-3 text-ellipsis whitespace-nowrap transition-all sm:h-9 sm:py-0 dark:bg-slate-800`}
           >
             <button
-              className={`w-full overflow-hidden overflow-ellipsis whitespace-nowrap`}
+              className={`w-full overflow-hidden text-ellipsis whitespace-nowrap`}
               title={prompt.title}
               onClick={() => {
                 choosePrompt({ ...prompt });
@@ -79,13 +79,13 @@ export default function PromptSidebar({
               {prompt.title}
             </button>
             <button
-              className="w-9 flex-shrink-0 text-3xl transition-all hover:scale-125 sm:w-0 sm:text-sm sm:opacity-0 sm:focus-visible:w-9 sm:focus-visible:opacity-100 sm:group-hover:w-9 sm:group-hover:opacity-100"
+              className="w-9 shrink-0 text-3xl transition-all hover:scale-125 sm:w-0 sm:text-sm sm:opacity-0 sm:group-hover:w-9 sm:group-hover:opacity-100 sm:focus-visible:w-9 sm:focus-visible:opacity-100"
               onClick={() => openEditModal(prompt)}
             >
               ✏️
             </button>
             <button
-              className="w-9 flex-shrink-0 text-3xl transition-all hover:scale-125 sm:w-0 sm:text-sm sm:opacity-0 sm:focus-visible:w-9 sm:focus-visible:opacity-100 sm:group-hover:w-9 sm:group-hover:opacity-100"
+              className="w-9 shrink-0 text-3xl transition-all hover:scale-125 sm:w-0 sm:text-sm sm:opacity-0 sm:group-hover:w-9 sm:group-hover:opacity-100 sm:focus-visible:w-9 sm:focus-visible:opacity-100"
               onClick={() => handleRemovePrompt(prompt)}
             >
               🗑️
@@ -105,20 +105,20 @@ export default function PromptSidebar({
         title={editingPrompt ? 'edit prompt' : 'create prompt'}
       >
         <input
-          className="mb-4 w-full rounded bg-slate-700 p-2"
+          className="mb-4 w-full rounded-sm bg-slate-700 p-2"
           placeholder="gordon ramsay"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
         <textarea
-          className="mb-4 w-full rounded bg-slate-700 p-2"
+          className="mb-4 w-full rounded-sm bg-slate-700 p-2"
           placeholder="you're gordon ramsay. teach me how to cook lasagna. pls don't scream"
           value={content}
           rows={4}
           onChange={(e) => setContent(e.target.value)}
         />
         <button
-          className="w-full rounded bg-green-700 px-4 py-2 text-white transition-all hover:bg-green-800 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+          className="w-full rounded-sm bg-green-700 px-4 py-2 text-white transition-all hover:bg-green-800 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
           onClick={handleAddOrUpdatePrompt}
           aria-disabled={!title || !content}
         >

@@ -47,15 +47,15 @@ export default function Messages({
   return (
     <div
       ref={containerRef}
-      className="relative -top-10 mx-auto w-full flex-grow overflow-y-auto px-1 pb-5 pt-10 sm:px-5"
+      className="relative -top-10 mx-auto w-full grow overflow-y-auto px-1 pt-10 pb-5 sm:px-5"
     >
       <div className="mx-auto w-full max-w-3xl text-base sm:text-sm">
         {messages.map((message, i) => (
           <Fragment key={i}>
             {message.role === 'user' && (
-              <div className="mb-5 ml-auto flex w-full justify-end border-r-2 border-sky-500 pl-20 pr-5 leading-6 last:mb-0">
+              <div className="mb-5 ml-auto flex w-full justify-end border-r-2 border-sky-500 pr-5 pl-20 leading-6 last:mb-0">
                 <p
-                  className="w-fit break-words"
+                  className="w-fit wrap-break-word"
                   dangerouslySetInnerHTML={{
                     __html: marked.parse(message.content),
                   }}
@@ -64,7 +64,7 @@ export default function Messages({
             )}
             {message.role === 'assistant' && (
               <div
-                className="markdown mb-5 w-full border-l-2 border-green-500 pl-5 pr-20 leading-6 last:mb-0"
+                className="markdown mb-5 w-full border-l-2 border-green-500 pr-20 pl-5 leading-6 last:mb-0"
                 dangerouslySetInnerHTML={{
                   __html: marked.parse(message.content),
                 }}

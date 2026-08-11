@@ -1,7 +1,7 @@
 import { RefObject, useEffect, useState } from 'react';
 
 export const useIsOnScreen = (
-  ref: RefObject<Element>,
+  ref: RefObject<Element | null>,
   rootMargin = '-10px',
 ) => {
   const [isIntersected, setIntersected] = useState(false);

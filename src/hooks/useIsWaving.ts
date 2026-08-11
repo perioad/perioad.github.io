@@ -10,7 +10,7 @@ export const useIsWaving = (
   const [isWaving, setIsWaving] = useState(false);
   const [isAccessGranted, setIsAccessGranted] = useState<boolean | null>(null);
   const [isReady, setIsReady] = useState<boolean | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout>();
+  const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const modelRef = useRef<handTrack.ObjectDetection | null>(null);
 
   useEffect(() => {

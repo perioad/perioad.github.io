@@ -34,7 +34,7 @@ export const CustomLink: FC<PropsWithChildren<Props>> = ({
   return (
     <a
       href={href}
-      className="inline-block border-b-2 border-pink-500 transition-all hover:scale-105 hover:bg-pink-500 hover:dark:text-zinc-900"
+      className="inline-block border-b-2 border-pink-500 transition-all hover:scale-105 hover:bg-pink-500 dark:hover:text-zinc-900"
       target={target}
       onClick={handleClick}
       onMouseEnter={handleHover}

@@ -21,7 +21,7 @@ export const AvatarVideo: FC<Props> = ({ type, isVisible, isLoading }) => {
       />
 
       {isLoading && (
-        <div className="absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 sm:h-32 sm:w-32">
+        <div className="absolute top-1/2 left-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 sm:h-32 sm:w-32">
           <Spinner />
         </div>
       )}

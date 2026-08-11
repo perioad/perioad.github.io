@@ -12,7 +12,7 @@ export const LazySection: FC<PropsWithChildren<Props>> = ({ id, children }) => {
   const isIntersected = useIsOnScreen(sectionRef);
 
   const Loader = () => (
-    <div className=" mx-auto h-20 w-20">
+    <div className="mx-auto h-20 w-20">
       <Spinner />
     </div>
   );

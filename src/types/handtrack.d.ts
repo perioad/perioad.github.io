@@ -37,7 +37,7 @@ declare module 'handtrackjs' {
         | ImageData
         | HTMLImageElement
         | HTMLCanvasElement
-        | HTMLVideoElement
+        | HTMLVideoElement,
     ): Promise<Prediction[]>;
     getFPS(): number;
     setModelParameters(params: ModelParams): void;
@@ -50,13 +50,13 @@ declare module 'handtrackjs' {
       height: number,
       radius: number | { tl: number; tr: number; br: number; bl: number },
       fill: boolean,
-      stroke?: boolean
+      stroke?: boolean,
     ): void;
     renderPredictions(
       predictions: Prediction[],
       canvas: HTMLCanvasElement,
       context: CanvasRenderingContext2D,
-      mediasource: HTMLImageElement | HTMLVideoElement
+      mediasource: HTMLImageElement | HTMLVideoElement,
     ): void;
     dispose(): void;
   }

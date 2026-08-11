@@ -56,7 +56,7 @@ export const Avatar = () => {
 
   return (
     <>
-      <div className="relative h-60 w-60 overflow-hidden before:absolute before:left-1/2 before:top-1/2 before:h-[400px] before:w-[200px] before:origin-top before:-translate-x-1/2 before:animate-spin-border before:bg-gradient-to-l before:from-transparent before:via-pink-500 before:to-transparent motion-reduce:before:hidden sm:h-96 sm:w-96 sm:before:w-[300px]">
+      <div className="relative h-60 w-60 overflow-hidden before:absolute before:top-1/2 before:left-1/2 before:h-[400px] before:w-[200px] before:origin-top before:-translate-x-1/2 before:animate-spin-border before:bg-linear-to-l before:from-transparent before:via-pink-500 before:to-transparent motion-reduce:before:hidden sm:h-96 sm:w-96 sm:before:w-[300px]">
         <div className="relative h-full w-full">
           <AvatarVideo
             type="still"
@@ -69,7 +69,7 @@ export const Avatar = () => {
 
         {shouldShowInteract && (
           <button
-            className=" absolute bottom-5 left-1/2 block -translate-x-1/2 transform border border-none bg-zinc-900 px-5 py-1 text-2xl text-pink-500 transition-all hover:rotate-2 active:scale-95 sm:bottom-10 "
+            className="absolute bottom-5 left-1/2 block -translate-x-1/2 transform border border-none bg-zinc-900 px-5 py-1 text-2xl text-pink-500 transition-all hover:rotate-2 active:scale-95 sm:bottom-10"
             onClick={handleInteract}
             onMouseEnter={handleInteractHover}
             aria-label="Press, give access to the webcam and wave to me so I could wave back :)"

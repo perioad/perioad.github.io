@@ -157,7 +157,7 @@ const ModelSelect: React.FC<ModelSelectProps> = ({ model, setModel }) => {
   return (
     <div className="relative flex items-center gap-2">
       <select
-        className="w-36 cursor-pointer text-ellipsis rounded-md bg-slate-700 px-2 py-1 text-center transition-all hover:bg-slate-800"
+        className="w-36 cursor-pointer rounded-md bg-slate-700 px-2 py-1 text-center text-ellipsis transition-all hover:bg-slate-800"
         value={model}
         title={model}
         onChange={handleChange}
@@ -178,7 +178,7 @@ const ModelSelect: React.FC<ModelSelectProps> = ({ model, setModel }) => {
       </select>
 
       {isLoading && (
-        <div className="absolute -right-8 top-1/2 h-5 w-5 -translate-y-1/2">
+        <div className="absolute top-1/2 -right-8 h-5 w-5 -translate-y-1/2">
           <Spinner />
         </div>
       )}

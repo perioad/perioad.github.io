@@ -10,7 +10,7 @@ export const BgPattern = memo(function BgPattern() {
 
   return (
     <div
-      className={`${css.pattern} ${animationClass} fixed left-0 top-0 -z-40 h-dvh w-dvw animate-bg-pattern motion-reduce:animate-none`}
+      className={`${css.pattern} ${animationClass} fixed top-0 left-0 -z-40 h-dvh w-dvw animate-bg-pattern motion-reduce:animate-none`}
     ></div>
   );
 });
