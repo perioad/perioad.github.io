@@ -9,7 +9,7 @@ const nextConfig = {
   reactCompiler: true,
   // Dev only. Lets phones and tablets on the LAN load the dev server, which is
   // the only way to exercise the camera hand tracking and iOS audio paths.
-  allowedDevOrigins: ['192.168.2.*'],
+  allowedDevOrigins: ['192.168.2.31', '192.168.31.35'],
 };
 
 export default nextConfig;
