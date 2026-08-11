@@ -92,6 +92,16 @@
   text-wrap: balance;
 }
 
+/* The bar is one more thing between the conversation and the edge of the
+   screen, and it says nothing the position of the messages does not. */
+@utility scrollbar-hidden {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /*
   Unlayered on purpose. The v4 upgrade tool moved these into `@layer utilities`,
   which drops them to the same precedence as Tailwind's own utilities and lets a

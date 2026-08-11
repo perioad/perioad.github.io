@@ -42,7 +42,7 @@ export default function PinnedBar({ pinned, onJump, onUnpin }: PinnedBarProps) {
   }
 
   return (
-    <div className="flex items-center gap-1 border-b border-slate-800 px-3 py-1 sm:px-5">
+    <div className="flex items-center gap-1 border-b border-slate-800 bg-white/25 px-3 py-1 backdrop-blur-xs sm:px-5 dark:bg-black/20">
       <button
         className="flex min-w-0 grow items-center gap-2 rounded-md px-2 py-1 text-left transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
         onClick={handleCycle}

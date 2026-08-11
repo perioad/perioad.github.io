@@ -9,6 +9,9 @@ interface MobileDrawerProps {
   title: string;
   children: ReactNode;
   footer?: ReactNode;
+  // Hidden from the eye only. Radix wants every dialog named, and the name is
+  // what a screen reader announces when the drawer takes focus.
+  isTitleHidden?: boolean;
 }
 
 // Radix handles what a hand-rolled panel would not: focus is trapped and
@@ -21,6 +24,7 @@ export default function MobileDrawer({
   title,
   children,
   footer,
+  isTitleHidden,
 }: MobileDrawerProps) {
   const sideStyles =
     side === 'left'
@@ -30,16 +34,18 @@ export default function MobileDrawer({
   return (
     <Dialog.Root open={isOpen} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/60 data-[state=closed]:animate-scrim-out data-[state=open]:animate-scrim-in" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/30 data-[state=closed]:animate-scrim-out data-[state=open]:animate-scrim-in" />
 
         <Dialog.Content
           // The title says everything there is to say about a list of chats,
           // and Radix warns unless the absence is deliberate.
           aria-describedby={undefined}
-          className={`fixed inset-y-0 z-50 flex w-[85%] max-w-xs flex-col border-slate-800 bg-white text-base dark:bg-black ${sideStyles}`}
+          className={`fixed inset-y-0 z-50 flex w-[85%] max-w-xs flex-col border-slate-800 bg-white/25 text-base backdrop-blur-xs dark:bg-black/20 ${sideStyles}`}
         >
           <div className="flex items-center justify-between border-b border-slate-800 py-2 pr-2 pl-4">
-            <Dialog.Title className="text-sm">{title}</Dialog.Title>
+            <Dialog.Title className={isTitleHidden ? 'sr-only' : 'text-sm'}>
+              {title}
+            </Dialog.Title>
 
             <Dialog.Close
               className="flex h-11 w-11 items-center justify-center rounded-md transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"

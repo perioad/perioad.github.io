@@ -26,6 +26,7 @@ import ProjectPicker from './ProjectPicker';
 import ProjectSettings from './ProjectSettings';
 import ThinkingSelect from './ThinkingSelect';
 import { useMediaQuery } from '../../../hooks/useMediaQuery';
+import { useMeasuredHeight } from '../hooks/useMeasuredHeight';
 import {
   DEFAULT_THINKING_LEVEL,
   parseThinkingLevel,
@@ -67,6 +68,8 @@ function getSavedPanelState(key: string): boolean {
 
 export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
   const isMobile = useMediaQuery(MOBILE_QUERY);
+  const measureHeader = useMeasuredHeight('--header-height');
+  const measureComposer = useMeasuredHeight('--composer-height');
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [currentChatId, setCurrentChatId] = useState<number>(1);
   const [isHistoryVisible, setIsHistoryVisible] = useState(() =>
@@ -512,7 +515,13 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
 
   return (
     <>
-      <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-slate-800 px-2 py-1 sm:px-4 sm:py-2">
+      <header
+        ref={measureHeader}
+        // Over the conversation rather than above it, so the messages carry on
+        // under it instead of stopping at a line. `main` is fixed, which is the
+        // containing block this is placed against.
+        className="absolute inset-x-0 top-0 z-20 grid grid-cols-[1fr_auto_1fr] items-center gap-2 bg-white/25 px-2 py-1 backdrop-blur-xs sm:px-4 sm:py-2 dark:bg-black/20"
+      >
         <div className="flex justify-start">
           <button
             onClick={() => showHistory(!isHistoryVisible)}
@@ -574,13 +583,13 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
         {!isMobile && (
           <aside
             inert={!isHistoryVisible}
-            className={`${isHistoryVisible ? 'w-56' : 'w-0'} h-full shrink-0 overflow-y-auto border-r border-r-slate-800 text-sm transition-all`}
+            className={`${isHistoryVisible ? 'w-56' : 'w-0'} h-full shrink-0 overflow-y-auto border-r border-r-slate-800 pt-(--header-height,3.25rem) text-sm transition-all`}
           >
             {historyList}
           </aside>
         )}
 
-        <div className="flex h-full grow flex-col overflow-hidden">
+        <div className="relative flex h-full grow flex-col overflow-hidden">
           <Messages
             messages={messages}
             addNewMessage={addNewMessage}
@@ -590,13 +599,18 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
             projectContext={projectContext}
           />
 
-          <ChatInput ref={chatInputRef} addNewMessage={addNewMessage} />
+          <div
+            ref={measureComposer}
+            className="absolute inset-x-0 bottom-0 z-10 bg-white/25 backdrop-blur-xs dark:bg-black/20"
+          >
+            <ChatInput ref={chatInputRef} addNewMessage={addNewMessage} />
+          </div>
         </div>
 
         {!isMobile && (
           <aside
             inert={!isPromptSidebarVisible}
-            className={`${isPromptSidebarVisible ? 'w-56' : 'w-0'} h-full shrink-0 overflow-y-auto border-l border-l-slate-800 text-sm transition-all`}
+            className={`${isPromptSidebarVisible ? 'w-56' : 'w-0'} h-full shrink-0 overflow-y-auto border-l border-l-slate-800 pt-(--header-height,3.25rem) text-sm transition-all`}
           >
             {promptList}
           </aside>
@@ -610,6 +624,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
             onOpenChange={showHistory}
             side="left"
             title="history"
+            isTitleHidden
             footer={
               <div className="flex flex-col gap-1">
                 <button

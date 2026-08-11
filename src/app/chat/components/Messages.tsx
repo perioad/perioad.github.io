@@ -10,6 +10,7 @@ import { useScrollToBottom } from '../hooks/useScrollToBottom';
 import { ChatModel } from 'openai/resources/index.mjs';
 import { ThinkingLevel } from '../utils/thinking';
 import PinnedBar from './PinnedBar';
+import { useMeasuredHeight } from '../hooks/useMeasuredHeight';
 
 const marked = new Marked(
   markedHighlight({
@@ -63,6 +64,7 @@ export default function Messages({
 }) {
   const { containerRef, scrollToBottom, scrollToBottomNow, isAtBottom } =
     useScrollToBottom();
+  const measurePinnedBar = useMeasuredHeight('--pinned-bar-height');
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
 
@@ -166,14 +168,22 @@ export default function Messages({
 
   return (
     <div className="relative flex grow flex-col overflow-hidden">
-      <PinnedBar pinned={pinned} onJump={jumpToMessage} onUnpin={togglePin} />
+      <div
+        ref={measurePinnedBar}
+        className="absolute inset-x-0 top-(--header-height,3.25rem) z-10"
+      >
+        <PinnedBar pinned={pinned} onJump={jumpToMessage} onUnpin={togglePin} />
+      </div>
 
       <div
         ref={containerRef}
-        // No padding of its own, so a turn's coloured edge is the edge of the
-        // screen. The gap between that edge and the words is the message's own
-        // padding, which the border needs anyway to sit off the text.
-        className="grow overflow-y-auto overscroll-contain py-5"
+        // Runs the full height of the column so the conversation is visible
+        // through the bars floating over it, and keeps clear of them with
+        // padding instead. No padding on the sides, so a turn's coloured edge is
+        // the edge of the screen: the gap between that edge and the words is the
+        // message's own padding, which the border needs anyway to sit off the
+        // text.
+        className="scrollbar-hidden grow overflow-y-auto overscroll-contain pt-[calc(var(--header-height,3.25rem)+var(--pinned-bar-height,0px)+1.25rem)] pb-[calc(var(--composer-height,5rem)+1.25rem)]"
         onClick={handleCopyCode}
       >
         <div className="mx-auto w-full max-w-3xl text-base sm:text-sm">
@@ -238,7 +248,7 @@ export default function Messages({
 
       {!isAtBottom && (
         <button
-          className="absolute bottom-3 left-1/2 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-full border border-slate-300 bg-white shadow-md transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+          className="absolute bottom-[calc(var(--composer-height,5rem)+0.75rem)] left-1/2 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-full border border-slate-300 shadow-md backdrop-blur-xs transition-colors hover:bg-slate-100/50 dark:border-slate-700 dark:hover:bg-slate-800/50"
           onClick={scrollToBottomNow}
           title="Scroll to latest"
           aria-label="Scroll to latest"
