@@ -7,15 +7,25 @@ export const useAudioEffect = (src: string, ignorePermissions = false) => {
   const { isSpeakerAllowed } = useSpeakerContext();
 
   useEffect(() => {
-    const audioRef = audioRegistry.get(src);
+    const audioRef = audioRegistry.get(src)!;
 
-    if ((ignorePermissions || isSpeakerAllowed) && !audioRef!.current) {
-      audioRef!.current = new Audio(src);
-    } else if (!isSpeakerAllowed && audioRef!.current) {
-      audioRef!.current.pause();
-      audioRef!.current.muted = true;
-    } else if (isSpeakerAllowed && audioRef!.current?.muted) {
-      audioRef!.current.muted = false;
+    if (!audioRef.current) {
+      if (ignorePermissions || isSpeakerAllowed) {
+        audioRef.current = new Audio(src);
+      }
+
+      return;
+    }
+
+    audioRef.current.muted = !isSpeakerAllowed;
+
+    // A caller that ignores permissions drives its own transport, so muting has
+    // to leave that alone. Pausing here landed in the same commit as the
+    // `play()` the music player issues for a track that is still marked as
+    // playing, and WebKit aborts a `play()` that a `pause()` cuts across,
+    // leaving the track stopped back at the start.
+    if (!isSpeakerAllowed && !ignorePermissions) {
+      audioRef.current.pause();
     }
   }, [src, isSpeakerAllowed, ignorePermissions]);
 

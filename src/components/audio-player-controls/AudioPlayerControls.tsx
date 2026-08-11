@@ -1,5 +1,6 @@
 import { FC, useEffect, useRef, useState } from 'react';
 import { formatDuration } from '../../utils/duration.utils';
+import { playAudio } from '../../utils/audio.utils';
 import { throttle } from 'lodash-es';
 
 import css from './AudioPlayerControls.module.css';
@@ -44,25 +45,47 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
   const playButtonTitle = isPlaying ? 'Pause audio' : 'Play audio';
   const muteButtonTitle = isSpeakerAllowed ? 'Mute music' : 'Unmute music';
 
+  // WebKit pauses a media element that is unmuted outside a user gesture, so
+  // the track has to be unmuted here in the click handler. Leaving it to the
+  // effect that syncs `muted` after the next render means playback starts muted
+  // and Safari stops it again as soon as the effect runs.
+  function unmuteMusic() {
+    if (musicAudio.current) {
+      musicAudio.current.muted = false;
+    }
+  }
+
   function handlePlayAudio() {
-    buttonDownSound.current?.play();
-    musicAudio.current?.play();
+    // Play doubles as unmute: starting a track while muted leaves the transport
+    // saying "stop" over silence, with nothing to tell playback apart from a
+    // stuck player.
+    if (!isSpeakerAllowed) {
+      setIsSpeakerAllowed(true);
+    }
+
+    unmuteMusic();
+
+    playAudio(buttonDownSound.current);
+    playAudio(musicAudio.current);
     setIsPlaying(true);
   }
 
   function handlePauseAudio() {
-    buttonUpSound.current?.play();
+    playAudio(buttonUpSound.current);
     musicAudio.current?.pause();
     setIsPlaying(false);
   }
 
   function handleMute() {
-    setIsSpeakerAllowed(!isSpeakerAllowed);
+    const isAllowed = !isSpeakerAllowed;
 
-    if (isSpeakerAllowed) {
-      buttonUpSound.current?.play();
+    setIsSpeakerAllowed(isAllowed);
+
+    if (isAllowed) {
+      unmuteMusic();
+      playAudio(buttonDownSound.current);
     } else {
-      buttonDownSound.current?.play();
+      playAudio(buttonUpSound.current);
     }
   }
 
@@ -99,8 +122,6 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
       return;
     }
 
-    setDuration(null);
-
     function handleAudioEnd() {
       setIsPlaying(false);
       setCurrentTime(0);
@@ -122,27 +143,43 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
     audioElement.volume = volume / 100;
 
     if (isPlaying) {
-      audioElement.play();
+      playAudio(audioElement);
     }
+  }, [musicAudio, isSpeakerAllowed, volume, isPlaying, setIsPlaying]);
 
-    if (audioElement?.readyState && audioElement.readyState > 0) {
-      setDuration(Math.floor(audioElement.duration));
+  // Duration belongs to the track, so it is read here rather than in the
+  // playback effect above: that effect also depends on mute, volume and play
+  // state, and re-reading `duration` on those meant a value sampled mid-track
+  // replaced the one from `loadedmetadata`. For a long mix the browser reports
+  // duration as an estimate that grows with what it has decoded, so muting ten
+  // minutes in relabelled the track as ten minutes long.
+  useEffect(() => {
+    const audioElement = musicAudio.current;
 
+    if (!audioElement) {
       return;
     }
 
-    function handleAudioDuration() {
-      if (typeof audioElement?.duration === 'number') {
-        setDuration(Math.floor(audioElement.duration));
-      }
+    function readDuration() {
+      const seconds = musicAudio.current?.duration;
+
+      setDuration(
+        seconds !== undefined && Number.isFinite(seconds)
+          ? Math.floor(seconds)
+          : null,
+      );
     }
 
-    audioElement?.addEventListener('loadedmetadata', handleAudioDuration);
+    readDuration();
+
+    audioElement.addEventListener('loadedmetadata', readDuration);
+    audioElement.addEventListener('durationchange', readDuration);
 
     return () => {
-      audioElement?.removeEventListener('loadedmetadata', handleAudioDuration);
+      audioElement.removeEventListener('loadedmetadata', readDuration);
+      audioElement.removeEventListener('durationchange', readDuration);
     };
-  }, [musicAudio, isSpeakerAllowed, volume, isPlaying, setIsPlaying]);
+  }, [musicAudio]);
 
   useEffect(() => {
     if (prevMusicAudio.current) {
@@ -166,7 +203,7 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
     <>
       <button
         onClick={() => (isPlaying ? handlePauseAudio() : handlePlayAudio())}
-        className={` px-2 py-1 text-2xl transition-colors dark:text-zinc-900 ${playButtonStyles} hover:text-white`}
+        className={`px-2 py-1 text-2xl transition-colors dark:text-zinc-900 ${playButtonStyles} hover:text-white`}
         title={playButtonTitle}
         aria-label={playButtonTitle}
       >
@@ -174,11 +211,11 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
       </button>
 
       <div className="flex flex-col gap-7">
-        <p className=" flex justify-between">
+        <div className="flex justify-between">
           <span>{currentTimeFormatted}</span>
 
           {durationElement}
-        </p>
+        </div>
 
         <input
           type="range"
@@ -193,7 +230,7 @@ export const AudioPlayerControls: FC<Props> = ({ src }) => {
 
         {!isIos && (
           <>
-            <output className=" text-center">volume: {volume}</output>
+            <output className="text-center">volume: {volume}</output>
 
             <input
               type="range"
