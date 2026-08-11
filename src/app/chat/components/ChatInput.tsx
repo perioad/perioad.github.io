@@ -105,7 +105,9 @@ export default function ChatInput({
   const promptTrimmedForAnimation = promptForAnimation.trim();
   const isEmptyPrompt = promptTrimmed.length === 0;
 
-  const minHeight = 52;
+  // Matches the square buttons beside it, in the same unit so that the row stays
+  // aligned when the root font size is turned up.
+  const minHeight = '3.25rem';
 
   function handleTextAreaChange(event: ChangeEvent<HTMLTextAreaElement>) {
     const value: string = event.target.value;
@@ -138,7 +140,7 @@ export default function ChatInput({
     setPrompt('');
 
     if (textareaRef.current) {
-      textareaRef.current.style.height = `${minHeight}px`;
+      textareaRef.current.style.height = minHeight;
       textareaRef.current.focus();
     }
 
@@ -195,7 +197,7 @@ export default function ChatInput({
 
         {recording.isSupported && (
           <button
-            className={`${micStyles} ml-2 flex h-[52px] w-[52px] shrink-0 items-center justify-center self-end rounded-md transition-colors sm:ml-3`}
+            className={`${micStyles} ml-2 flex h-13 w-13 shrink-0 items-center justify-center self-end rounded-md transition-colors sm:ml-3`}
             aria-disabled={recording.status === 'transcribing'}
             title={micLabel}
             aria-label={micLabel}
@@ -212,7 +214,7 @@ export default function ChatInput({
         )}
 
         <button
-          className="ml-2 flex h-[52px] w-[52px] shrink-0 items-center justify-center self-end rounded-md bg-slate-100 transition-all aria-disabled:opacity-40 sm:ml-3 dark:bg-slate-800"
+          className="ml-2 flex h-13 w-13 shrink-0 items-center justify-center self-end rounded-md bg-slate-100 transition-all aria-disabled:opacity-40 sm:ml-3 dark:bg-slate-800"
           aria-disabled={isEmptyPrompt}
           title="Send"
           aria-label="Send"
