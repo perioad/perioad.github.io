@@ -114,21 +114,53 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     fetchPrompts();
   }, []);
 
-  const saveMessages = async (updatedMessages: Message[], title?: string) => {
+  const saveMessages = async (updatedMessages: Message[]) => {
     const tx = await getHistoryTransaction();
+    // Read back rather than taken from the render, because the title is written
+    // by a request that lands while the reply is still streaming. A snapshot
+    // taken before it arrived would put `New chat` back on the next chunk.
+    const saved = await tx.store.get(currentChatId);
 
-    await Promise.all([
-      tx.store.put({
-        id: currentChatId,
-        title: title ?? currentHistory?.title ?? 'New chat',
-        messages: updatedMessages,
-      }),
-      tx.done,
-    ]);
+    await tx.store.put({
+      id: currentChatId,
+      title: saved?.title ?? 'New chat',
+      messages: updatedMessages,
+    });
+
+    await tx.done;
 
     const newHistory = await getHistoryDB();
 
     setHistory(newHistory);
+  };
+
+  // Writes the title alone, leaving whatever messages are in the record. The
+  // reply is usually still streaming into it by the time this runs.
+  const renameChat = async (id: number, title: string) => {
+    const tx = await getHistoryTransaction();
+    const saved = await tx.store.get(id);
+
+    if (saved) {
+      await tx.store.put({ ...saved, title });
+    }
+
+    await tx.done;
+
+    setHistory(await getHistoryDB());
+  };
+
+  // Named after the message is saved, not before it. Waiting on the title used
+  // to hold up the first message of every chat behind a whole round trip.
+  const nameChat = async (id: number, content: string) => {
+    try {
+      const title = await getAiTitle(content);
+
+      if (title) {
+        await renameChat(id, title);
+      }
+    } catch (error) {
+      console.error('Error naming the chat:', error);
+    }
   };
 
   const addNewMessage = async (content: string, role: 'user' | 'assistant') => {
@@ -140,9 +172,14 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
           { ...lastMessage, content: lastMessage.content + content }
         : { content, role };
 
-    const titleByAi = messages.length === 0 ? await getAiTitle(content) : null;
+    const isFirstMessage = messages.length === 0;
+    const chatId = currentChatId;
 
-    await saveMessages([...messages, newMessage], titleByAi ?? undefined);
+    await saveMessages([...messages, newMessage]);
+
+    if (isFirstMessage) {
+      nameChat(chatId, content);
+    }
   };
 
   const togglePin = async (index: number) => {
@@ -308,6 +345,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
       history={history}
       selectChat={selectChat}
       removeChat={requestChatRemoval}
+      renameChat={renameChat}
       currentChatId={currentChatId}
     />
   );
