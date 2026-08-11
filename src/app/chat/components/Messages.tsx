@@ -1,14 +1,15 @@
-import { Fragment, MouseEvent, useCallback, useState } from 'react';
+import { Fragment, MouseEvent, useCallback, useMemo, useState } from 'react';
 import { Marked } from 'marked';
 import hljs from 'highlight.js';
 import { markedHighlight } from 'marked-highlight';
 import 'highlight.js/styles/monokai.css';
-import { ArrowDown, Check, Copy } from 'lucide-react';
+import { ArrowDown, Check, Copy, Pin, PinOff } from 'lucide-react';
 import useAiStream from '../hooks/useAiStream';
 import { Message } from '../models/chat';
 import { useScrollToBottom } from '../hooks/useScrollToBottom';
 import { ChatModel } from 'openai/resources/index.mjs';
 import { ThinkingLevel } from '../utils/thinking';
+import PinnedBar from './PinnedBar';
 
 const marked = new Marked(
   markedHighlight({
@@ -19,6 +20,15 @@ const marked = new Marked(
     },
   }),
 );
+
+const actionButton =
+  'flex h-9 items-center rounded-md px-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-inherit dark:text-slate-400 dark:hover:bg-slate-800';
+
+// There is no hover on a touch screen, so below `sm` the actions stay put.
+const revealOnHover =
+  'sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100';
+
+const highlighted = 'bg-slate-100 dark:bg-slate-800';
 
 // `marked-highlight` owns the `code` renderer, so rather than reimplement its
 // escaping the wrapper is added to the finished HTML. Only our own tags can
@@ -41,15 +51,28 @@ export default function Messages({
   addNewMessage,
   model,
   thinkingLevel,
+  togglePin,
 }: {
   messages: Message[];
   addNewMessage: (content: string, role: 'user' | 'assistant') => void;
   model: ChatModel;
   thinkingLevel: ThinkingLevel;
+  togglePin: (index: number) => void;
 }) {
   const { containerRef, scrollToBottom, scrollToBottomNow, isAtBottom } =
     useScrollToBottom();
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
+
+  // Derived rather than stored: nothing to reconcile when a message is added or
+  // a pin is dropped, and the order follows the conversation for free.
+  const pinned = useMemo(
+    () =>
+      messages
+        .map((message, index) => ({ message, index }))
+        .filter(({ message }) => message.isPinned),
+    [messages],
+  );
 
   const addAssistantContent = useCallback(
     async (content: string) => {
@@ -93,23 +116,55 @@ export default function Messages({
     setTimeout(() => setCopiedIndex(null), 1500);
   }
 
-  const copyButton = (content: string, index: number) => (
-    <button
-      className="mt-1 flex h-9 items-center gap-1 rounded-md px-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-inherit sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800"
-      onClick={() => copyMessage(content, index)}
-      title="Copy message"
-      aria-label="Copy message"
-    >
-      {copiedIndex === index ? (
-        <Check className="h-4 w-4" />
-      ) : (
-        <Copy className="h-4 w-4" />
-      )}
-    </button>
+  // Landing in the middle of a long conversation gives no clue which message was
+  // the target, so it lights up for a moment after the scroll.
+  function jumpToMessage(index: number) {
+    containerRef.current
+      ?.querySelector(`[data-message="${index}"]`)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    setHighlightedIndex(index);
+
+    setTimeout(() => setHighlightedIndex(null), 1500);
+  }
+
+  const messageActions = (message: Message, index: number) => (
+    <div className="mt-1 flex">
+      <button
+        className={`${actionButton} ${revealOnHover}`}
+        onClick={() => copyMessage(message.content, index)}
+        title="Copy message"
+        aria-label="Copy message"
+      >
+        {copiedIndex === index ? (
+          <Check className="h-4 w-4" />
+        ) : (
+          <Copy className="h-4 w-4" />
+        )}
+      </button>
+
+      <button
+        // A pinned message keeps its button on show, because the button is also
+        // the only marker in the conversation that it is pinned.
+        className={`${actionButton} ${message.isPinned ? 'text-sky-500' : revealOnHover}`}
+        onClick={() => togglePin(index)}
+        title={message.isPinned ? 'Unpin message' : 'Pin message'}
+        aria-label={message.isPinned ? 'Unpin message' : 'Pin message'}
+        aria-pressed={Boolean(message.isPinned)}
+      >
+        {message.isPinned ? (
+          <PinOff className="h-4 w-4" />
+        ) : (
+          <Pin className="h-4 w-4" />
+        )}
+      </button>
+    </div>
   );
 
   return (
     <div className="relative flex grow flex-col overflow-hidden">
+      <PinnedBar pinned={pinned} onJump={jumpToMessage} onUnpin={togglePin} />
+
       <div
         ref={containerRef}
         className="grow overflow-y-auto overscroll-contain px-3 py-5 sm:px-5"
@@ -128,7 +183,10 @@ export default function Messages({
           {messages.map((message, i) => (
             <Fragment key={i}>
               {message.role === 'user' && (
-                <div className="group mb-5 flex w-full flex-col items-end border-r-2 border-sky-500 pr-3 leading-6 last:mb-0 sm:pr-5">
+                <div
+                  data-message={i}
+                  className={`${highlightedIndex === i ? highlighted : ''} group mb-5 flex w-full flex-col items-end border-r-2 border-sky-500 pr-3 leading-6 transition-colors last:mb-0 sm:pr-5`}
+                >
                   <div
                     className="markdown w-full text-right wrap-break-word"
                     dangerouslySetInnerHTML={{
@@ -136,12 +194,15 @@ export default function Messages({
                     }}
                   />
 
-                  {copyButton(message.content, i)}
+                  {messageActions(message, i)}
                 </div>
               )}
 
               {message.role === 'assistant' && (
-                <div className="group mb-5 w-full border-l-2 border-green-500 pl-3 leading-6 last:mb-0 sm:pl-5">
+                <div
+                  data-message={i}
+                  className={`${highlightedIndex === i ? highlighted : ''} group mb-5 w-full border-l-2 border-green-500 pl-3 leading-6 transition-colors last:mb-0 sm:pl-5`}
+                >
                   <div
                     className="markdown wrap-break-word"
                     dangerouslySetInnerHTML={{
@@ -149,7 +210,7 @@ export default function Messages({
                     }}
                   />
 
-                  {copyButton(message.content, i)}
+                  {messageActions(message, i)}
                 </div>
               )}
             </Fragment>

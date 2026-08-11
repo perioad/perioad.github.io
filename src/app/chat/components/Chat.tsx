@@ -114,20 +114,13 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     fetchPrompts();
   }, []);
 
-  const addNewMessage = async (content: string, role: 'user' | 'assistant') => {
-    const newMessage: Message =
-      role === 'assistant' && messages.at(-1)?.role === 'assistant'
-        ? { role, content: messages.at(-1)?.content + content }
-        : { content, role };
-
-    const titleByAi = messages.length === 0 ? await getAiTitle(content) : null;
-    const updatedMessages = [...messages, newMessage];
+  const saveMessages = async (updatedMessages: Message[], title?: string) => {
     const tx = await getHistoryTransaction();
 
     await Promise.all([
       tx.store.put({
         id: currentChatId,
-        title: titleByAi ?? currentHistory?.title ?? 'New chat',
+        title: title ?? currentHistory?.title ?? 'New chat',
         messages: updatedMessages,
       }),
       tx.done,
@@ -136,6 +129,28 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     const newHistory = await getHistoryDB();
 
     setHistory(newHistory);
+  };
+
+  const addNewMessage = async (content: string, role: 'user' | 'assistant') => {
+    const lastMessage = messages.at(-1);
+    const newMessage: Message =
+      role === 'assistant' && lastMessage?.role === 'assistant'
+        ? // Spread rather than rebuilt, so a reply pinned while it streams does
+          // not lose the pin to the next chunk.
+          { ...lastMessage, content: lastMessage.content + content }
+        : { content, role };
+
+    const titleByAi = messages.length === 0 ? await getAiTitle(content) : null;
+
+    await saveMessages([...messages, newMessage], titleByAi ?? undefined);
+  };
+
+  const togglePin = async (index: number) => {
+    await saveMessages(
+      messages.map((message, i) =>
+        i === index ? { ...message, isPinned: !message.isPinned } : message,
+      ),
+    );
   };
 
   // Both panels take the whole screen as drawers, so only one can be open.
@@ -382,6 +397,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
             addNewMessage={addNewMessage}
             model={model}
             thinkingLevel={thinkingLevel}
+            togglePin={togglePin}
           />
 
           <ChatInput
