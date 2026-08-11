@@ -1,6 +1,8 @@
 import { ChangeEvent, KeyboardEvent, useRef, useState, useEffect } from 'react';
-import { ArrowUp } from 'lucide-react';
+import { ArrowUp, Mic, Square } from 'lucide-react';
 import { Prompt } from '../models/db';
+import { Spinner } from '../../../components/spinner/Spinner';
+import { useSpeechToText } from '../hooks/useSpeechToText';
 
 interface ChatInputProps {
   addNewMessage: (content: string, role: 'user' | 'assistant') => Promise<void>;
@@ -73,6 +75,32 @@ export default function ChatInput({
     textareaRef.current?.focus();
   }, []);
 
+  function handleTranscript(text: string) {
+    // Appended to whatever is in the box, read from the previous value rather
+    // than the captured one so that typing during the recording survives.
+    setPrompt((existing) =>
+      existing.trim().length === 0 ? text : `${existing.trim()} ${text}`,
+    );
+
+    setTimeout(() => {
+      adjustElementHeight(textareaRef);
+      adjustElementHeight(animatedTextRef);
+      textareaRef.current?.focus();
+    }, 0);
+  }
+
+  const recording = useSpeechToText(handleTranscript);
+
+  const micLabel = {
+    idle: 'Record a prompt',
+    recording: 'Stop recording',
+    transcribing: 'Transcribing',
+  }[recording.status];
+  const micStyles =
+    recording.status === 'recording'
+      ? 'animate-pulse bg-red-500 text-white'
+      : 'bg-slate-100 aria-disabled:opacity-40 dark:bg-slate-800';
+
   const promptTrimmed = prompt.trim();
   const promptTrimmedForAnimation = promptForAnimation.trim();
   const isEmptyPrompt = promptTrimmed.length === 0;
@@ -134,39 +162,65 @@ export default function ChatInput({
   }, [prompt]);
 
   return (
-    <div className="relative mx-auto flex w-full max-w-4xl px-3 pt-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5 sm:pb-5">
-      <textarea
-        ref={textareaRef}
-        className="h-auto w-full resize-none rounded-md bg-slate-100 p-3 text-base leading-6 sm:text-sm dark:bg-slate-800"
-        style={{ minHeight }}
-        rows={1}
-        placeholder="Write your prompt here.."
-        value={prompt}
-        onChange={handleTextAreaChange}
-        onKeyDown={handleKeyDown}
-        onScroll={handleTextareaScroll}
-      ></textarea>
+    <div className="mx-auto w-full max-w-4xl px-3 pt-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5 sm:pb-5">
+      {recording.error && (
+        <p role="alert" className="mb-2 text-red-500">
+          {recording.error}
+        </p>
+      )}
 
-      <div
-        ref={animatedTextRef}
-        className={`pointer-events-none absolute bottom-0 left-3 overflow-y-auto p-3 sm:left-5 ${
-          isAnimating ? 'visible animate-fly-up' : 'invisible'
-        }`}
-      >
-        <pre className="wrap-break-word whitespace-pre-wrap">
-          {promptTrimmedForAnimation}
-        </pre>
+      <div className="relative flex">
+        <textarea
+          ref={textareaRef}
+          className="h-auto w-full resize-none rounded-md bg-slate-100 p-3 text-base leading-6 sm:text-sm dark:bg-slate-800"
+          style={{ minHeight }}
+          rows={1}
+          placeholder="Write your prompt here.."
+          value={prompt}
+          onChange={handleTextAreaChange}
+          onKeyDown={handleKeyDown}
+          onScroll={handleTextareaScroll}
+        ></textarea>
+
+        <div
+          ref={animatedTextRef}
+          className={`pointer-events-none absolute bottom-0 left-0 overflow-y-auto p-3 ${
+            isAnimating ? 'visible animate-fly-up' : 'invisible'
+          }`}
+        >
+          <pre className="wrap-break-word whitespace-pre-wrap">
+            {promptTrimmedForAnimation}
+          </pre>
+        </div>
+
+        {recording.isSupported && (
+          <button
+            className={`${micStyles} ml-2 flex h-[52px] w-[52px] shrink-0 items-center justify-center self-end rounded-md transition-colors sm:ml-3`}
+            aria-disabled={recording.status === 'transcribing'}
+            title={micLabel}
+            aria-label={micLabel}
+            onClick={recording.toggleRecording}
+          >
+            {recording.status === 'transcribing' && (
+              <div className="h-5 w-5">
+                <Spinner />
+              </div>
+            )}
+            {recording.status === 'recording' && <Square className="h-5 w-5" />}
+            {recording.status === 'idle' && <Mic className="h-5 w-5" />}
+          </button>
+        )}
+
+        <button
+          className="ml-2 flex h-[52px] w-[52px] shrink-0 items-center justify-center self-end rounded-md bg-slate-100 transition-all aria-disabled:opacity-40 sm:ml-3 dark:bg-slate-800"
+          aria-disabled={isEmptyPrompt}
+          title="Send"
+          aria-label="Send"
+          onClick={() => handleSubmit(promptTrimmed)}
+        >
+          <ArrowUp className="h-5 w-5" />
+        </button>
       </div>
-
-      <button
-        className="ml-3 flex h-[52px] w-[52px] shrink-0 items-center justify-center self-end rounded-md bg-slate-100 transition-all aria-disabled:opacity-40 sm:ml-5 dark:bg-slate-800"
-        aria-disabled={isEmptyPrompt}
-        title="Send"
-        aria-label="Send"
-        onClick={() => handleSubmit(promptTrimmed)}
-      >
-        <ArrowUp className="h-5 w-5" />
-      </button>
     </div>
   );
 }
