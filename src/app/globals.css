@@ -107,8 +107,12 @@
   margin-bottom: 0.75rem;
 }
 
+/* Relative to the message, so it stays a step below the prose at either
+   breakpoint. Monospace faces read larger than the body text at a matching size,
+   so this brings the two closer to level rather than making the code small. */
 .markdown code {
   border-radius: 0.375rem;
+  font-size: 0.875em;
 }
 
 .markdown li {
