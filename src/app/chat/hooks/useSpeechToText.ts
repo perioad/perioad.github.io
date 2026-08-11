@@ -15,6 +15,12 @@ const RECORDING_FORMATS = [
 
 export type RecordingStatus = 'idle' | 'recording' | 'transcribing';
 
+// A voice clears a quiet room by a wide margin on this scale, and the hold
+// carries the reading through the gaps between words, which are long enough to
+// make anything driven by the raw level flicker.
+const SPEAKING_THRESHOLD = 0.03;
+const SPEAKING_HOLD_MS = 300;
+
 function getSupportedFormat() {
   if (typeof MediaRecorder === 'undefined') return undefined;
 
@@ -26,20 +32,84 @@ function getSupportedFormat() {
 export function useSpeechToText(onTranscript: (text: string) => void) {
   const [status, setStatus] = useState<RecordingStatus>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const frameRef = useRef<number | null>(null);
 
   const [isSupported] = useState(
     () =>
       Boolean(navigator.mediaDevices?.getUserMedia) && !!getSupportedFormat(),
   );
 
+  // Whether there is a voice in the stream, rather than how loud it is. A level
+  // would be a new value on every frame, and the only question anything asks of
+  // it is whether the microphone is picking anything up.
+  function watchLoudness(stream: MediaStream) {
+    const audioContext = new AudioContext();
+    const analyser = audioContext.createAnalyser();
+
+    analyser.fftSize = 512;
+    audioContext.createMediaStreamSource(stream).connect(analyser);
+    audioContextRef.current = audioContext;
+
+    const samples = new Uint8Array(analyser.fftSize);
+    let lastLoudAt = 0;
+
+    function measure() {
+      analyser.getByteTimeDomainData(samples);
+
+      // How far the waveform strays from the silent midpoint, which is what a
+      // voice does to it whatever the pitch.
+      let total = 0;
+
+      for (let i = 0; i < samples.length; i++) {
+        const deviation = (samples[i] - 128) / 128;
+
+        total += deviation * deviation;
+      }
+
+      if (Math.sqrt(total / samples.length) > SPEAKING_THRESHOLD) {
+        lastLoudAt = performance.now();
+      }
+
+      const speaking = performance.now() - lastLoudAt < SPEAKING_HOLD_MS;
+
+      setIsSpeaking((wasSpeaking) =>
+        wasSpeaking === speaking ? wasSpeaking : speaking,
+      );
+
+      frameRef.current = requestAnimationFrame(measure);
+    }
+
+    measure();
+  }
+
+  function stopWatchingLoudness() {
+    if (frameRef.current !== null) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
+
+    audioContextRef.current?.close();
+    audioContextRef.current = null;
+
+    setIsSpeaking(false);
+  }
+
   useEffect(() => {
     // Leaving a track live keeps the browser's recording indicator on long
-    // after the component is gone.
+    // after the component is gone, and the analyser holds an audio context open
+    // behind it.
     return () => {
       streamRef.current?.getTracks().forEach((track) => track.stop());
+      audioContextRef.current?.close();
+
+      if (frameRef.current !== null) {
+        cancelAnimationFrame(frameRef.current);
+      }
     };
   }, []);
 
@@ -105,6 +175,7 @@ export function useSpeechToText(onTranscript: (text: string) => void) {
     recorder.onstop = () => {
       stream.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
+      stopWatchingLoudness();
 
       const recording = new Blob(chunksRef.current, { type: format.mimeType });
 
@@ -117,6 +188,7 @@ export function useSpeechToText(onTranscript: (text: string) => void) {
     streamRef.current = stream;
 
     recorder.start();
+    watchLoudness(stream);
     setStatus('recording');
   }
 
@@ -133,5 +205,5 @@ export function useSpeechToText(onTranscript: (text: string) => void) {
     }
   }
 
-  return { status, error, isSupported, toggleRecording };
+  return { status, error, isSupported, isSpeaking, toggleRecording };
 }

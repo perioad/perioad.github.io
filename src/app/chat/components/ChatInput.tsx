@@ -8,7 +8,7 @@ import {
   useEffect,
   useLayoutEffect,
 } from 'react';
-import { ArrowUp, Mic, Square } from 'lucide-react';
+import { ArrowUp, Mic } from 'lucide-react';
 import { Spinner } from '../../../components/spinner/Spinner';
 import { useSpeechToText } from '../hooks/useSpeechToText';
 
@@ -38,6 +38,25 @@ function fitToContent(
   element.style.height = 'auto';
   const newHeight = Math.min(textarea.scrollHeight, maxHeight);
   element.style.height = `${newHeight}px`;
+}
+
+// Bars that rise and fall with a voice, and sit low and still without one. What
+// the button has to say while recording is that the microphone is listening and
+// whether it can hear anything, which a stop square says neither of.
+function SoundBars({ isSpeaking }: { isSpeaking: boolean }) {
+  return (
+    <span className="flex h-5 items-center gap-0.75" aria-hidden>
+      {[0, 1, 2, 3].map((bar) => (
+        <span
+          key={bar}
+          className={`h-4 w-0.75 rounded-full bg-current ${isSpeaking ? 'animate-equalize' : 'scale-y-25'}`}
+          // Negative, so each bar starts part way through the cycle and the row
+          // reads as a wave rather than four bars moving as one.
+          style={{ animationDelay: `-${bar * 0.12}s` }}
+        />
+      ))}
+    </span>
+  );
 }
 
 export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
@@ -115,7 +134,7 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
   }[recording.status];
   const micStyles =
     recording.status === 'recording'
-      ? 'animate-pulse bg-red-500 text-white'
+      ? 'bg-slate-100 text-sky-500 dark:bg-slate-800'
       : 'bg-slate-100 aria-disabled:opacity-40 dark:bg-slate-800';
 
   const promptTrimmed = prompt.trim();
@@ -229,7 +248,9 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
                 <Spinner />
               </div>
             )}
-            {recording.status === 'recording' && <Square className="h-5 w-5" />}
+            {recording.status === 'recording' && (
+              <SoundBars isSpeaking={recording.isSpeaking} />
+            )}
             {recording.status === 'idle' && <Mic className="h-5 w-5" />}
           </button>
         )}
