@@ -170,12 +170,15 @@ export default function Messages({
 
       <div
         ref={containerRef}
-        className="grow overflow-y-auto overscroll-contain px-3 py-5 sm:px-5"
+        // No padding of its own, so a turn's coloured edge is the edge of the
+        // screen. The gap between that edge and the words is the message's own
+        // padding, which the border needs anyway to sit off the text.
+        className="grow overflow-y-auto overscroll-contain py-5"
         onClick={handleCopyCode}
       >
         <div className="mx-auto w-full max-w-3xl text-base sm:text-sm">
           {messages.length === 0 && (
-            <div className="py-10 text-center">
+            <div className="px-3 py-10 text-center sm:px-5">
               <p className="mb-1 text-xl">what shall we get into?</p>
               <p className="text-slate-500 dark:text-slate-400">
                 byok - bring your own key
@@ -188,7 +191,7 @@ export default function Messages({
               {message.role === 'user' && (
                 <div
                   data-message={i}
-                  className={`${highlightedIndex === i ? highlighted : ''} group mb-5 flex w-full flex-col items-end border-r-2 border-sky-500 pr-3 leading-6 transition-colors last:mb-0 sm:pr-5`}
+                  className={`${highlightedIndex === i ? highlighted : ''} group mb-5 flex w-full flex-col items-end border-r-2 border-sky-500 px-3 leading-6 transition-colors last:mb-0 sm:px-5`}
                 >
                   <div
                     className="markdown w-full text-right wrap-break-word"
@@ -204,7 +207,7 @@ export default function Messages({
               {message.role === 'assistant' && (
                 <div
                   data-message={i}
-                  className={`${highlightedIndex === i ? highlighted : ''} group mb-5 w-full border-l-2 border-green-500 pl-3 leading-6 transition-colors last:mb-0 sm:pl-5`}
+                  className={`${highlightedIndex === i ? highlighted : ''} group mb-5 w-full border-l-2 border-green-500 px-3 leading-6 transition-colors last:mb-0 sm:px-5`}
                 >
                   <div
                     className="markdown wrap-break-word"
