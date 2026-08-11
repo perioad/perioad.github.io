@@ -11,12 +11,16 @@
   --animate-bg-pattern: colorChange 5s linear infinite;
   --animate-fly-up: fly-up 0.5s ease-out forwards;
 
+  /* Each direction has keyframes of its own rather than the one set played in
+     reverse. Radix keeps a closing panel mounted by comparing the animation name
+     before and after the state changes, so a shared name reads as no animation
+     at all and the drawer vanishes on the way out. */
   --animate-scrim-in: appear 0.2s ease-out;
-  --animate-scrim-out: appear 0.2s ease-in reverse;
-  --animate-drawer-in-left: drawer-left 0.25s ease-out;
-  --animate-drawer-out-left: drawer-left 0.25s ease-in reverse;
-  --animate-drawer-in-right: drawer-right 0.25s ease-out;
-  --animate-drawer-out-right: drawer-right 0.25s ease-in reverse;
+  --animate-scrim-out: disappear 0.2s ease-in;
+  --animate-drawer-in-left: drawer-in-left 0.25s ease-out;
+  --animate-drawer-out-left: drawer-out-left 0.25s ease-in;
+  --animate-drawer-in-right: drawer-in-right 0.25s ease-out;
+  --animate-drawer-out-right: drawer-out-right 0.25s ease-in;
 
   @keyframes appear {
     0% {
@@ -52,7 +56,15 @@
       opacity: 0;
     }
   }
-  @keyframes drawer-left {
+  @keyframes disappear {
+    0% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes drawer-in-left {
     0% {
       transform: translateX(-100%);
     }
@@ -60,12 +72,28 @@
       transform: translateX(0);
     }
   }
-  @keyframes drawer-right {
+  @keyframes drawer-out-left {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-100%);
+    }
+  }
+  @keyframes drawer-in-right {
     0% {
       transform: translateX(100%);
     }
     100% {
       transform: translateX(0);
+    }
+  }
+  @keyframes drawer-out-right {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(100%);
     }
   }
 }
