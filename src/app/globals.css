@@ -192,6 +192,31 @@
   padding: 0.25rem 0.5rem;
 }
 
+/* Raised and shrunk like a footnote mark, so a sentence carrying three of them
+   still reads as a sentence. Sized in `em` to follow the prose it interrupts,
+   which is a step smaller on a wide screen than on a narrow one. */
+.markdown .citation {
+  display: inline-block;
+  margin-left: 0.125rem;
+  border-radius: 0.25rem;
+  background-color: var(--color-slate-200);
+  padding: 0 0.25rem;
+  vertical-align: super;
+  font-size: 0.6875em;
+  line-height: 1.5;
+  color: var(--color-slate-600);
+  text-decoration: none;
+}
+
+.dark .markdown .citation {
+  background-color: var(--color-slate-800);
+  color: var(--color-slate-400);
+}
+
+.markdown .citation:hover {
+  color: var(--color-sky-500);
+}
+
 .code-block {
   position: relative;
 }

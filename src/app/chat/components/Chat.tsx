@@ -15,7 +15,7 @@ import {
   getPromptTransaction,
 } from '../utils/db';
 import { HistoryRecord } from '../models/db';
-import { Message } from '../models/chat';
+import { Citation, Message } from '../models/chat';
 import { ResponsesModel } from 'openai/resources/index.mjs';
 import PromptSidebar from './PromptSidebar';
 import { Project, Prompt } from '../models/db';
@@ -205,7 +205,11 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     }
   };
 
-  const addNewMessage = async (content: string, role: 'user' | 'assistant') => {
+  const addNewMessage = async (
+    content: string,
+    role: 'user' | 'assistant',
+    citations?: Citation[],
+  ) => {
     const lastMessage = messages.at(-1);
     const newMessage: Message =
       role === 'assistant' && lastMessage?.role === 'assistant'
@@ -213,6 +217,10 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
           // not lose the pin to the next chunk.
           { ...lastMessage, content: lastMessage.content + content }
         : { content, role };
+
+    if (citations?.length) {
+      newMessage.citations = citations;
+    }
 
     const isFirstMessage = messages.length === 0;
     const chatId = currentChatId;

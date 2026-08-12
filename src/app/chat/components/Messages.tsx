@@ -5,11 +5,14 @@ import { markedHighlight } from 'marked-highlight';
 import 'highlight.js/styles/monokai.css';
 import { ArrowDown, Check, Copy, Pin, PinOff } from 'lucide-react';
 import useAiStream from '../hooks/useAiStream';
-import { Message } from '../models/chat';
+import { Citation, Message } from '../models/chat';
 import { useScrollToBottom } from '../hooks/useScrollToBottom';
 import { ResponsesModel } from 'openai/resources/index.mjs';
 import { ThinkingLevel } from '../utils/thinking';
 import PinnedBar from './PinnedBar';
+import Sources from './Sources';
+import { Spinner } from '../../../components/spinner/Spinner';
+import { withCitationMarkers } from '../utils/webSearch';
 import { useMeasuredHeight } from '../hooks/useMeasuredHeight';
 
 const marked = new Marked(
@@ -43,8 +46,10 @@ function withCodeBlockActions(html: string): string {
     .replaceAll('</pre>', '</pre></div>');
 }
 
-function renderMarkdown(content: string): string {
-  return withCodeBlockActions(marked.parse(content) as string);
+function renderMarkdown(content: string, citations?: Citation[]): string {
+  return withCodeBlockActions(
+    marked.parse(withCitationMarkers(content, citations ?? [])) as string,
+  );
 }
 
 export default function Messages({
@@ -56,7 +61,11 @@ export default function Messages({
   projectContext,
 }: {
   messages: Message[];
-  addNewMessage: (content: string, role: 'user' | 'assistant') => void;
+  addNewMessage: (
+    content: string,
+    role: 'user' | 'assistant',
+    citations?: Citation[],
+  ) => void;
   model: ResponsesModel;
   thinkingLevel: ThinkingLevel;
   togglePin: (index: number) => void;
@@ -79,8 +88,8 @@ export default function Messages({
   );
 
   const addAssistantContent = useCallback(
-    async (content: string) => {
-      await addNewMessage(content, 'assistant');
+    async (content: string, citations: Citation[]) => {
+      await addNewMessage(content, 'assistant', citations);
       scrollToBottom();
     },
     [addNewMessage, scrollToBottom],
@@ -88,7 +97,7 @@ export default function Messages({
 
   const isAwaitingReply = messages.at(-1)?.role === 'user';
 
-  useAiStream(
+  const searchStatus = useAiStream(
     isAwaitingReply,
     messages,
     addAssistantContent,
@@ -222,9 +231,14 @@ export default function Messages({
                   <div
                     className="markdown wrap-break-word"
                     dangerouslySetInnerHTML={{
-                      __html: renderMarkdown(message.content),
+                      __html: renderMarkdown(
+                        message.content,
+                        message.citations,
+                      ),
                     }}
                   />
+
+                  <Sources citations={message.citations ?? []} />
 
                   {messageActions(message, i)}
                 </div>
@@ -232,15 +246,27 @@ export default function Messages({
             </Fragment>
           ))}
 
-          {isAwaitingReply && (
+          {/* A search can start after the reply has begun, so this outlives
+              the wait for the first words of one. The edge is grey rather than
+              the green of a turn, because there is no turn here yet: it goes
+              green as the first words land and this gives way to the message. */}
+          {(isAwaitingReply || searchStatus) && (
             <div
-              className="flex w-full gap-1 border-l-2 border-green-500 pl-3 sm:pl-5"
+              className="flex w-full items-center gap-2 border-l-2 border-slate-300 pl-3 sm:pl-5 dark:border-slate-700"
               role="status"
-              aria-label="Waiting for a reply"
+              aria-label={searchStatus ?? 'Waiting for a reply'}
             >
-              <span className="h-2 w-2 animate-bounce rounded-full bg-green-500" />
-              <span className="h-2 w-2 animate-bounce rounded-full bg-green-500 [animation-delay:0.15s]" />
-              <span className="h-2 w-2 animate-bounce rounded-full bg-green-500 [animation-delay:0.3s]" />
+              <div className="h-5 w-5 shrink-0">
+                <Spinner />
+              </div>
+
+              {/* Left unanimated, since the spinner beside it already carries
+                  the sense that something is happening. */}
+              {searchStatus && (
+                <span className="text-slate-500 dark:text-slate-400">
+                  {searchStatus}
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -248,7 +274,7 @@ export default function Messages({
 
       {!isAtBottom && (
         <button
-          className="absolute bottom-[calc(var(--composer-height,5rem)+0.75rem)] left-1/2 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-full border border-slate-300 shadow-md backdrop-blur-xs transition-colors hover:bg-slate-100/50 dark:border-slate-700 dark:hover:bg-slate-800/50"
+          className="absolute bottom-[calc(var(--composer-height,5rem)+0.75rem)] left-1/2 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-full shadow-md backdrop-blur-xs transition-colors hover:bg-slate-100/50 dark:border-slate-700 dark:hover:bg-slate-800/50"
           onClick={scrollToBottomNow}
           title="Scroll to latest"
           aria-label="Scroll to latest"
