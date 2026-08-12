@@ -1,16 +1,37 @@
-import { Fragment, MouseEvent, useCallback, useMemo, useState } from 'react';
+import {
+  Fragment,
+  MouseEvent,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Marked } from 'marked';
 import hljs from 'highlight.js';
 import { markedHighlight } from 'marked-highlight';
 import 'highlight.js/styles/monokai.css';
-import { ArrowDown, Check, Copy, Pin, PinOff } from 'lucide-react';
+import {
+  ArrowDown,
+  Check,
+  Copy,
+  Pencil,
+  Pin,
+  PinOff,
+  RotateCcw,
+  Square,
+  TriangleAlert,
+  Volume2,
+  VolumeX,
+} from 'lucide-react';
 import useAiStream from '../hooks/useAiStream';
+import { useReadAloud } from '../hooks/useReadAloud';
 import { Citation, Message } from '../models/chat';
 import { useScrollToBottom } from '../hooks/useScrollToBottom';
 import { ResponsesModel } from 'openai/resources/index.mjs';
 import { ThinkingLevel } from '../utils/thinking';
 import PinnedBar from './PinnedBar';
 import Sources from './Sources';
+import { AttachmentList } from './Attachments';
 import { Spinner } from '../../../components/spinner/Spinner';
 import { withCitationMarkers } from '../utils/webSearch';
 import { useMeasuredHeight } from '../hooks/useMeasuredHeight';
@@ -34,6 +55,9 @@ const revealOnHover =
 
 const highlighted = 'bg-slate-100 dark:bg-slate-800';
 
+const floatingButton =
+  'absolute bottom-[calc(var(--composer-height,5rem)+0.75rem)] left-1/2 flex h-11 -translate-x-1/2 items-center justify-center rounded-full shadow-md backdrop-blur-xs transition-colors hover:bg-slate-100/50 dark:border-slate-700 dark:hover:bg-slate-800/50';
+
 // `marked-highlight` owns the `code` renderer, so rather than reimplement its
 // escaping the wrapper is added to the finished HTML. Only our own tags can
 // match: anything in the source is escaped by the time it gets here.
@@ -55,27 +79,34 @@ function renderMarkdown(content: string, citations?: Citation[]): string {
 export default function Messages({
   messages,
   addNewMessage,
+  editMessage,
+  dropMessagesFrom,
   model,
   thinkingLevel,
   togglePin,
-  projectContext,
+  instructions,
 }: {
   messages: Message[];
   addNewMessage: (
     content: string,
     role: 'user' | 'assistant',
-    citations?: Citation[],
+    extras?: { citations?: Citation[] },
   ) => void;
+  editMessage: (index: number, content: string) => Promise<void>;
+  dropMessagesFrom: (index: number) => Promise<void>;
   model: ResponsesModel;
   thinkingLevel: ThinkingLevel;
   togglePin: (index: number) => void;
-  projectContext: string | null;
+  instructions: string | null;
 }) {
   const { containerRef, scrollToBottom, scrollToBottomNow, isAtBottom } =
     useScrollToBottom();
   const measurePinnedBar = useMeasuredHeight('--pinned-bar-height');
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [draft, setDraft] = useState('');
+  const draftRef = useRef<HTMLTextAreaElement>(null);
 
   // Derived rather than stored: nothing to reconcile when a message is added or
   // a pin is dropped, and the order follows the conversation for free.
@@ -89,7 +120,7 @@ export default function Messages({
 
   const addAssistantContent = useCallback(
     async (content: string, citations: Citation[]) => {
-      await addNewMessage(content, 'assistant', citations);
+      await addNewMessage(content, 'assistant', { citations });
       scrollToBottom();
     },
     [addNewMessage, scrollToBottom],
@@ -97,14 +128,17 @@ export default function Messages({
 
   const isAwaitingReply = messages.at(-1)?.role === 'user';
 
-  const searchStatus = useAiStream(
-    isAwaitingReply,
-    messages,
-    addAssistantContent,
-    model,
-    thinkingLevel,
-    projectContext,
-  );
+  const { searchStatus, isStreaming, isStopped, error, stop, restart } =
+    useAiStream(
+      isAwaitingReply,
+      messages,
+      addAssistantContent,
+      model,
+      thinkingLevel,
+      instructions,
+    );
+
+  const readAloud = useReadAloud();
 
   // One listener for every code block, since the buttons live inside HTML that
   // React only knows as a string.
@@ -142,6 +176,60 @@ export default function Messages({
     setTimeout(() => setHighlightedIndex(null), 1500);
   }
 
+  function startEditing(index: number, content: string) {
+    setEditingIndex(index);
+    setDraft(content);
+
+    // After the paint that swaps the words for the box holding them.
+    setTimeout(() => draftRef.current?.focus());
+  }
+
+  // The reply that follows a question cannot survive it being changed, so it
+  // goes along with everything said after it, the way it does in ChatGPT. The
+  // edited question is then the last thing in the conversation, and is asked.
+  async function saveEdit(index: number) {
+    const content = draft.trim();
+
+    if (!content) return;
+
+    setEditingIndex(null);
+    await editMessage(index, content);
+    restart();
+  }
+
+  // Throws the reply away and asks the same question again, rather than adding
+  // a second answer under the first.
+  async function regenerate(index: number) {
+    await dropMessagesFrom(index);
+    restart();
+  }
+
+  // A failure that arrived before any of the reply did leaves the question
+  // last and only needs asking again. One that interrupted a reply leaves half
+  // of it behind, which is thrown away first.
+  function retry() {
+    const last = messages.length - 1;
+
+    if (messages[last]?.role === 'assistant') {
+      regenerate(last);
+
+      return;
+    }
+
+    restart();
+  }
+
+  // A stopped reply that never started is the only one worth mentioning: one
+  // stopped halfway is sitting there half written, which says it plainly
+  // enough and carries its own button to ask again.
+  const notice = error
+    ? { message: error, isFault: true, canRetry: true }
+    : readAloud.error
+      ? { message: readAloud.error, isFault: true, canRetry: false }
+      : isStopped && isAwaitingReply
+        ? { message: 'stopped.', isFault: false, canRetry: true }
+        : null;
+
   const messageActions = (message: Message, index: number) => (
     <div className="mt-1 flex">
       <button
@@ -172,6 +260,51 @@ export default function Messages({
           <Pin className="h-4 w-4" />
         )}
       </button>
+
+      {message.role === 'user' && (
+        <button
+          className={`${actionButton} ${revealOnHover}`}
+          onClick={() => startEditing(index, message.content)}
+          title="Edit message"
+          aria-label="Edit message"
+        >
+          <Pencil className="h-4 w-4" />
+        </button>
+      )}
+
+      {message.role === 'assistant' && (
+        <>
+          <button
+            className={`${actionButton} ${readAloud.speakingIndex === index ? 'text-sky-500' : revealOnHover}`}
+            onClick={() => readAloud.toggle(index, message.content)}
+            title={
+              readAloud.speakingIndex === index ? 'Stop reading' : 'Read aloud'
+            }
+            aria-label={
+              readAloud.speakingIndex === index ? 'Stop reading' : 'Read aloud'
+            }
+          >
+            {readAloud.loadingIndex === index ? (
+              <div className="h-4 w-4">
+                <Spinner />
+              </div>
+            ) : readAloud.speakingIndex === index ? (
+              <VolumeX className="h-4 w-4" />
+            ) : (
+              <Volume2 className="h-4 w-4" />
+            )}
+          </button>
+
+          <button
+            className={`${actionButton} ${revealOnHover}`}
+            onClick={() => regenerate(index)}
+            title="Regenerate reply"
+            aria-label="Regenerate reply"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </button>
+        </>
+      )}
     </div>
   );
 
@@ -212,14 +345,60 @@ export default function Messages({
                   data-message={i}
                   className={`${highlightedIndex === i ? highlighted : ''} group mb-5 flex w-full flex-col items-end border-r-2 border-sky-500 px-3 leading-6 transition-colors last:mb-0 sm:px-5`}
                 >
-                  <div
-                    className="markdown w-full text-right wrap-break-word"
-                    dangerouslySetInnerHTML={{
-                      __html: renderMarkdown(message.content),
-                    }}
-                  />
+                  {message.attachments && (
+                    <div className="mb-2">
+                      <AttachmentList
+                        attachments={message.attachments}
+                        align="end"
+                      />
+                    </div>
+                  )}
 
-                  {messageActions(message, i)}
+                  {editingIndex === i ? (
+                    <div className="w-full">
+                      <textarea
+                        ref={draftRef}
+                        className="h-32 w-full resize-none rounded-md bg-slate-100 p-2 dark:bg-slate-800"
+                        value={draft}
+                        onChange={(event) => setDraft(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Escape') setEditingIndex(null);
+
+                          if (event.key === 'Enter' && !event.shiftKey) {
+                            event.preventDefault();
+                            saveEdit(i);
+                          }
+                        }}
+                      />
+
+                      <div className="flex justify-end">
+                        <button
+                          className={actionButton}
+                          onClick={() => setEditingIndex(null)}
+                        >
+                          cancel
+                        </button>
+
+                        <button
+                          className={actionButton}
+                          onClick={() => saveEdit(i)}
+                        >
+                          save and ask again
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div
+                        className="markdown w-full text-right wrap-break-word"
+                        dangerouslySetInnerHTML={{
+                          __html: renderMarkdown(message.content),
+                        }}
+                      />
+
+                      {messageActions(message, i)}
+                    </>
+                  )}
                 </div>
               )}
 
@@ -250,7 +429,7 @@ export default function Messages({
               the wait for the first words of one. The edge is grey rather than
               the green of a turn, because there is no turn here yet: it goes
               green as the first words land and this gives way to the message. */}
-          {(isAwaitingReply || searchStatus) && (
+          {isStreaming && (isAwaitingReply || searchStatus) && (
             <div
               className="flex w-full items-center gap-2 border-l-2 border-slate-300 pl-3 sm:pl-5 dark:border-slate-700"
               role="status"
@@ -269,18 +448,59 @@ export default function Messages({
               )}
             </div>
           )}
+
+          {/* Said in the conversation rather than in an alert, so it can be
+              read next to the question it belongs to and answered by pressing
+              something. A reply that failed halfway leaves what it managed
+              above this, which is worth keeping and is thrown away only if the
+              question is asked again. */}
+          {notice && (
+            <div
+              className={`flex w-full flex-wrap items-center gap-x-2 border-l-2 px-3 sm:px-5 ${notice.isFault ? 'border-red-400 dark:border-red-500' : 'border-slate-300 dark:border-slate-700'}`}
+              role={notice.isFault ? 'alert' : 'status'}
+            >
+              {notice.isFault && (
+                <TriangleAlert className="h-4 w-4 shrink-0 text-red-500" />
+              )}
+
+              <span className="text-slate-500 dark:text-slate-400">
+                {notice.message}
+              </span>
+
+              {notice.canRetry && (
+                <button className={actionButton} onClick={retry}>
+                  try again
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {!isAtBottom && (
+      {/* Both want the same spot, and only one of them is ever the thing to
+          press: while a reply is arriving it is being followed down the page
+          anyway. */}
+      {isStreaming ? (
         <button
-          className="absolute bottom-[calc(var(--composer-height,5rem)+0.75rem)] left-1/2 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-full shadow-md backdrop-blur-xs transition-colors hover:bg-slate-100/50 dark:border-slate-700 dark:hover:bg-slate-800/50"
-          onClick={scrollToBottomNow}
-          title="Scroll to latest"
-          aria-label="Scroll to latest"
+          className={`${floatingButton} gap-2 px-4`}
+          onClick={stop}
+          title="Stop generating"
+          aria-label="Stop generating"
         >
-          <ArrowDown className="h-5 w-5" />
+          <Square className="h-3 w-3 fill-current" />
+          stop
         </button>
+      ) : (
+        !isAtBottom && (
+          <button
+            className={`${floatingButton} w-11`}
+            onClick={scrollToBottomNow}
+            title="Scroll to latest"
+            aria-label="Scroll to latest"
+          >
+            <ArrowDown className="h-5 w-5" />
+          </button>
+        )
       )}
     </div>
   );

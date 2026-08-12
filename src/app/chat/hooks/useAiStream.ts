@@ -1,8 +1,9 @@
 import OpenAI from 'openai';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Citation, Message } from '../models/chat';
 import { ResponsesModel } from 'openai/resources/index.mjs';
 import { supportsThinking, ThinkingLevel } from '../utils/thinking';
+import { toInput } from '../utils/attachments';
 import {
   describeSearchAction,
   SEARCH_GUIDANCE,
@@ -10,20 +11,59 @@ import {
   toCitation,
 } from '../utils/webSearch';
 
+export type AiStream = {
+  searchStatus: string | null;
+  isStreaming: boolean;
+  isStopped: boolean;
+  error: string | null;
+  stop: () => void;
+  restart: () => void;
+};
+
+// What went wrong, in the words of someone who has to do something about it.
+// The api's own message is the fallback rather than the first choice: it is
+// written for whoever wrote the request, not whoever is sitting in front of it.
+function describeError(error: unknown): string {
+  if (error instanceof OpenAI.APIError) {
+    if (error.status === 401) {
+      return 'openai refused that key. check it under manage key.';
+    }
+
+    if (error.status === 429) {
+      return 'too many requests, or the key is out of credit.';
+    }
+
+    if (error.status === 404) {
+      return 'that model is not available on this key.';
+    }
+
+    return error.message;
+  }
+
+  return 'could not reach openai. check your connection and try again.';
+}
+
 const useAiStream = (
   shouldRequest: boolean,
   messages: Message[],
   onNewChunk: (content: string, citations: Citation[]) => Promise<void>,
   model: ResponsesModel,
   thinkingLevel: ThinkingLevel,
-  projectContext: string | null,
-) => {
+  instructions: string | null,
+): AiStream => {
   const askedForTurnRef = useRef<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   // What the model is doing while it has nothing to show yet. Null whenever it
   // is answering out of what it already knows, which is most turns. Only ever
   // set from inside a running stream, and cleared when that stream ends, so
   // there is no state here to reset as the effect re-runs.
   const [searchStatus, setSearchStatus] = useState<string | null>(null);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [isStopped, setIsStopped] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  // Asking the same question twice is not a change to the question, so there is
+  // nothing in the conversation for the effect to notice. This is the notice.
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!shouldRequest) {
@@ -36,68 +76,68 @@ const useAiStream = (
     // one without adding a turn, so pinning while a reply was on its way used to
     // ask for a second one. The question being answered identifies the turn:
     // pinning leaves it alone, and switching chats mid-question changes it.
-    const turn = `${messages.length}:${messages.at(-1)?.content}`;
+    const turn = `${attempt}:${messages.length}:${messages.at(-1)?.content}`;
 
     if (askedForTurnRef.current === turn) return;
 
     askedForTurnRef.current = turn;
 
-    const fetchApiKey = () => {
-      if (typeof window === 'undefined') return;
+    // Not aborted when this effect is cleaned up. Every chunk is saved, which
+    // makes a new `messages` array, which re-runs the effect: a stream that
+    // stopped on cleanup would stop itself on its own first word. Only the stop
+    // button ends one early.
+    const controller = new AbortController();
 
-      const apiKey = localStorage.getItem('key');
-
-      if (!apiKey) {
-        alert(
-          'There is no OpenAI API key. Add it by pressing the key button in the header.',
-        );
-
-        return '';
-      }
-      return apiKey;
-    };
-
-    const apiKey = fetchApiKey();
-
-    const openai = new OpenAI({
-      apiKey,
-      dangerouslyAllowBrowser: true,
-    });
-
-    const canSearch = supportsWebSearch(model);
-
-    // Carried outside the conversation, so neither the guidance nor a project's
-    // instructions are stored in it, rendered in it, or replayed as something
-    // the visitor said. The project has the last word, so one that wants the
-    // web checked on every question can say so and be listened to.
-    const instructions = [canSearch ? SEARCH_GUIDANCE : null, projectContext]
-      .filter(Boolean)
-      .join('\n\n');
+    abortRef.current = controller;
 
     const ask = async () => {
+      setIsStreaming(true);
+      setIsStopped(false);
+      setError(null);
+
+      const apiKey =
+        typeof window === 'undefined' ? null : localStorage.getItem('key');
+
+      if (!apiKey) {
+        setError('there is no openai key yet. add one under manage key.');
+        setIsStreaming(false);
+
+        return;
+      }
+
+      const openai = new OpenAI({ apiKey, dangerouslyAllowBrowser: true });
+      const canSearch = supportsWebSearch(model);
+
+      // Carried outside the conversation, so none of the guidance is stored in
+      // it, rendered in it, or replayed as something the visitor said.
+      const allInstructions = [canSearch ? SEARCH_GUIDANCE : null, instructions]
+        .filter(Boolean)
+        .join('\n\n');
+
       try {
-        const stream = await openai.responses.create({
-          model,
-          ...(instructions && { instructions }),
-          // Reduced to the two fields the api knows. `isPinned` rides along on
-          // the same objects and would be rejected as an unrecognised key.
-          input: messages.map(({ role, content }) => ({ role, content })),
-          // Left on `auto`, the choice the api makes for a tool it is given, so
-          // the model reaches for the web when the question wants it and
-          // answers from what it knows when it does not. `SEARCH_GUIDANCE` is
-          // what makes that judgement anything like ChatGPT's.
-          ...(canSearch && { tools: [{ type: 'web_search' as const }] }),
-          stream: true,
-          // Responses keeps the exchange for later retrieval unless told not
-          // to, where chat completions did not. The conversation belongs in
-          // this browser's IndexedDB and nowhere else.
-          store: false,
-          // Checked here as well as in the header, so that a model without
-          // reasoning never carries the parameter and the 400 it would cause.
-          ...(supportsThinking(model) && {
-            reasoning: { effort: thinkingLevel },
-          }),
-        });
+        const stream = await openai.responses.create(
+          {
+            model,
+            ...(allInstructions && { instructions: allInstructions }),
+            input: messages.map(toInput),
+            // Left on `auto`, the choice the api makes for a tool it is given,
+            // so the model reaches for the web when the question wants it and
+            // answers from what it knows when it does not. `SEARCH_GUIDANCE` is
+            // what makes that judgement anything like ChatGPT's.
+            ...(canSearch && { tools: [{ type: 'web_search' as const }] }),
+            stream: true,
+            // Responses keeps the exchange for later retrieval unless told not
+            // to, where chat completions did not. The conversation belongs in
+            // this browser's IndexedDB and nowhere else.
+            store: false,
+            // Checked here as well as in the header, so that a model without
+            // reasoning never carries the parameter and the 400 it would cause.
+            ...(supportsThinking(model) && {
+              reasoning: { effort: thinkingLevel },
+            }),
+          },
+          { signal: controller.signal },
+        );
 
         let updatedMessage = '';
         const citations: Citation[] = [];
@@ -141,9 +181,18 @@ const useAiStream = (
           }
         }
       } catch (error) {
-        console.error('Error fetching AI stream:', error);
+        // Asked for, so there is nothing to report beyond the fact of it.
+        // Whatever had arrived by then is already saved and stays in the
+        // conversation.
+        if (error instanceof OpenAI.APIUserAbortError) {
+          setIsStopped(true);
+        } else {
+          console.error('Error fetching AI stream:', error);
+          setError(describeError(error));
+        }
       } finally {
         setSearchStatus(null);
+        setIsStreaming(false);
       }
     };
 
@@ -154,10 +203,25 @@ const useAiStream = (
     onNewChunk,
     model,
     thinkingLevel,
-    projectContext,
+    instructions,
+    attempt,
   ]);
 
-  return searchStatus;
+  const stop = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+  }, []);
+
+  // For asking again after a failure, and for a reply thrown away to be
+  // regenerated. Both leave the conversation saying what it already said, so
+  // the turn has to be forgotten before it will be asked a second time.
+  const restart = useCallback(() => {
+    askedForTurnRef.current = null;
+    setError(null);
+    setAttempt((previous) => previous + 1);
+  }, []);
+
+  return { searchStatus, isStreaming, isStopped, error, stop, restart };
 };
 
 export default useAiStream;

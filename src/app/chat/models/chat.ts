@@ -7,9 +7,21 @@ export type Citation = {
   endIndex: number;
 };
 
+export type Attachment = {
+  name: string;
+  mediaType: string;
+  // Held as a data url rather than a blob url, which is a handle on something
+  // in this page's memory and would be dead by the time the chat was reopened.
+  // It is also what the api wants, so nothing has to be converted to send it.
+  dataUrl: string;
+};
+
 export type Message = {
   content: string;
   role: 'assistant' | 'user';
+  // What was sent along with the question. Only ever on a user's turn: the
+  // model answers in words.
+  attachments?: Attachment[];
   // Local only. A message carries its own pinned state instead of the chat
   // holding a list of ids, so there is nothing to keep in sync when the
   // conversation changes, and the pinned set is just a filter over the messages.

@@ -1,5 +1,7 @@
 import {
   ChangeEvent,
+  ClipboardEvent,
+  DragEvent,
   KeyboardEvent,
   Ref,
   RefObject,
@@ -9,9 +11,16 @@ import {
   useEffect,
   useLayoutEffect,
 } from 'react';
-import { ArrowUp, Mic } from 'lucide-react';
+import { ArrowUp, Mic, Paperclip } from 'lucide-react';
 import { Spinner } from '../../../components/spinner/Spinner';
 import { useSpeechToText } from '../hooks/useSpeechToText';
+import { Attachment } from '../models/chat';
+import {
+  ACCEPTED_ATTACHMENTS,
+  MAX_ATTACHMENT_BYTES,
+  readAsAttachment,
+} from '../utils/attachments';
+import { AttachmentList } from './Attachments';
 
 export type ChatInputHandle = {
   focus: () => void;
@@ -19,7 +28,11 @@ export type ChatInputHandle = {
 };
 
 interface ChatInputProps {
-  addNewMessage: (content: string, role: 'user' | 'assistant') => Promise<void>;
+  addNewMessage: (
+    content: string,
+    role: 'user' | 'assistant',
+    extras?: { attachments?: Attachment[] },
+  ) => Promise<void>;
   ref?: Ref<ChatInputHandle>;
 }
 
@@ -122,9 +135,13 @@ function SoundBars({
 export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const animatedTextRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [prompt, setPrompt] = useState('');
   const [promptForAnimation, setPromptForAnimation] = useState('');
   const [isAnimating, setIsAnimating] = useState(false);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
+  const [isDraggedOver, setIsDraggedOver] = useState(false);
 
   const handleTextareaScroll = () => {
     if (textareaRef.current && animatedTextRef.current) {
@@ -200,6 +217,9 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
   const promptTrimmed = prompt.trim();
   const promptTrimmedForAnimation = promptForAnimation.trim();
   const isEmptyPrompt = promptTrimmed.length === 0;
+  // A picture can be the whole question, so something attached is enough to
+  // send on its own.
+  const canSend = !isEmptyPrompt || attachments.length > 0;
 
   // A line of text and the padding around it, which is also the smallest a
   // target should be under a thumb. Matches the square buttons beside it, in the
@@ -213,8 +233,48 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
     setPrompt(value);
   }
 
+  async function attach(files: File[]) {
+    const withinLimit = files.filter(
+      ({ size }) => size <= MAX_ATTACHMENT_BYTES,
+    );
+
+    setAttachmentError(
+      withinLimit.length === files.length
+        ? null
+        : 'some files were too large to attach.',
+    );
+
+    if (!withinLimit.length) return;
+
+    const read = await Promise.all(withinLimit.map(readAsAttachment));
+
+    setAttachments((existing) => [...existing, ...read]);
+  }
+
+  // A screenshot goes straight into the box on a keyboard, which is how it is
+  // done everywhere else and saves a trip through a file picker.
+  function handlePaste(event: ClipboardEvent<HTMLTextAreaElement>) {
+    const files = Array.from(event.clipboardData.files);
+
+    if (!files.length) return;
+
+    event.preventDefault();
+    attach(files);
+  }
+
+  function handleDrop(event: DragEvent<HTMLDivElement>) {
+    const files = Array.from(event.dataTransfer.files);
+
+    setIsDraggedOver(false);
+
+    if (!files.length) return;
+
+    event.preventDefault();
+    attach(files);
+  }
+
   function handleSubmit(prompt: string) {
-    if (isEmptyPrompt) {
+    if (!canSend) {
       return;
     }
 
@@ -222,8 +282,10 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
     // copy has to show is the text being sent, and the box is cleared below.
     setPromptForAnimation(prompt);
     setIsAnimating(true);
-    addNewMessage(prompt, 'user');
+    addNewMessage(prompt, 'user', { attachments });
     setPrompt('');
+    setAttachments([]);
+    setAttachmentError(null);
 
     // The keyboard covers most of a phone, including the reply that was the
     // point of sending. Keeping focus would hold it open, since tapping send
@@ -277,14 +339,49 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
     // The same above as below, split out of what the two were spending between
     // them rather than added to it, so the bar sits where it did and only looks
     // even. The floor under the bottom is the home indicator's, not a choice.
-    <div className="mx-auto w-full max-w-4xl px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:px-5 sm:pt-3 sm:pb-3">
-      {recording.error && (
+    <div
+      className={`mx-auto w-full max-w-4xl px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:px-5 sm:pt-3 sm:pb-3 ${isDraggedOver ? 'bg-slate-100/50 dark:bg-slate-800/50' : ''}`}
+      onDragOver={(event) => {
+        event.preventDefault();
+        setIsDraggedOver(true);
+      }}
+      onDragLeave={() => setIsDraggedOver(false)}
+      onDrop={handleDrop}
+    >
+      {(recording.error || attachmentError) && (
         <p role="alert" className="mb-2 text-red-500">
-          {recording.error}
+          {recording.error ?? attachmentError}
         </p>
       )}
 
+      {attachments.length > 0 && (
+        <div className="mb-2">
+          <AttachmentList
+            attachments={attachments}
+            onRemove={(index) =>
+              setAttachments((existing) =>
+                existing.filter((_, i) => i !== index),
+              )
+            }
+          />
+        </div>
+      )}
+
       <div className="relative flex">
+        <input
+          ref={fileInputRef}
+          className="hidden"
+          type="file"
+          multiple
+          accept={ACCEPTED_ATTACHMENTS}
+          onChange={(event) => {
+            attach(Array.from(event.target.files ?? []));
+            // Cleared so that picking the same file twice in a row is still a
+            // change, and still fires this.
+            event.target.value = '';
+          }}
+        />
+
         <textarea
           ref={textareaRef}
           className="h-auto w-full resize-none rounded-md bg-slate-100 px-3 py-2.5 text-base leading-6 sm:text-sm dark:bg-slate-800"
@@ -294,6 +391,7 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
           value={prompt}
           onChange={handleTextAreaChange}
           onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
           onScroll={handleTextareaScroll}
         ></textarea>
 
@@ -307,6 +405,15 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
             {promptTrimmedForAnimation}
           </pre>
         </div>
+
+        <button
+          className="ml-2 flex h-11 w-11 shrink-0 items-center justify-center self-end rounded-md bg-slate-100 transition-colors sm:ml-3 dark:bg-slate-800"
+          title="Attach a file"
+          aria-label="Attach a file"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <Paperclip className="h-5 w-5" />
+        </button>
 
         {recording.isSupported && (
           <button
@@ -330,7 +437,7 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
 
         <button
           className="ml-2 flex h-11 w-11 shrink-0 items-center justify-center self-end rounded-md bg-slate-100 transition-all aria-disabled:opacity-40 sm:ml-3 dark:bg-slate-800"
-          aria-disabled={isEmptyPrompt}
+          aria-disabled={!canSend}
           title="Send"
           aria-label="Send"
           onClick={() => handleSubmit(promptTrimmed)}

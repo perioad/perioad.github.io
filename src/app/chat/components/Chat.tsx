@@ -1,7 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { KeyRound, PanelLeft, PanelRight, SquarePen } from 'lucide-react';
+import {
+  KeyRound,
+  PanelLeft,
+  PanelRight,
+  SlidersHorizontal,
+  SquarePen,
+} from 'lucide-react';
 import ChatInput, { ChatInputHandle } from './ChatInput';
 import History from './History';
 import Messages from './Messages';
@@ -15,7 +21,8 @@ import {
   getPromptTransaction,
 } from '../utils/db';
 import { HistoryRecord } from '../models/db';
-import { Citation, Message } from '../models/chat';
+import { Attachment, Citation, Message } from '../models/chat';
+import { parseChatFile } from '../utils/chatFile';
 import { ResponsesModel } from 'openai/resources/index.mjs';
 import PromptSidebar from './PromptSidebar';
 import { Project, Prompt } from '../models/db';
@@ -24,6 +31,7 @@ import MobileDrawer from './MobileDrawer';
 import ConfirmDialog from './ConfirmDialog';
 import ProjectPicker from './ProjectPicker';
 import ProjectSettings from './ProjectSettings';
+import InstructionsModal from './InstructionsModal';
 import ThinkingSelect from './ThinkingSelect';
 import { useMediaQuery } from '../../../hooks/useMediaQuery';
 import { useRetainedValue } from '../../../hooks/useRetainedValue';
@@ -51,6 +59,12 @@ function getThinkingLevelFromLocalStorage(): ThinkingLevel {
     parseThinkingLevel(localStorage.getItem('thinking')) ??
     DEFAULT_THINKING_LEVEL
   );
+}
+
+function getInstructionsFromLocalStorage(): string {
+  if (typeof window === 'undefined') return '';
+
+  return localStorage.getItem('instructions') ?? '';
 }
 
 // Where the visitor was when they last closed the tab. Only a note of it: the
@@ -106,6 +120,13 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     null,
   );
   const [isProjectEditorOpen, setIsProjectEditorOpen] = useState(false);
+  const [customInstructions, setCustomInstructions] = useState(
+    getInstructionsFromLocalStorage,
+  );
+  const [isInstructionsOpen, setIsInstructionsOpen] = useState(false);
+  // As with the project editor, the key that hands the form a clean draft each
+  // time it is opened, since it outlives its own closing animation.
+  const [instructionsVisit, setInstructionsVisit] = useState(0);
   // Bumped on every open, as the key that gives the editor a clean form. It has
   // to stay mounted after it closes to animate out, so a fresh mount can no
   // longer be had by unmounting it.
@@ -143,6 +164,16 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
       projects.find(({ id }) => id === currentProjectId)?.instructions.trim() ||
       null,
     [projects, currentProjectId],
+  );
+
+  // The project speaks last, so a project set up for one kind of work can
+  // overrule a standing instruction that does not suit it.
+  const instructions = useMemo(
+    () =>
+      [customInstructions.trim(), projectContext]
+        .filter(Boolean)
+        .join('\n\n') || null,
+    [customInstructions, projectContext],
   );
 
   useEffect(() => {
@@ -239,7 +270,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
   const addNewMessage = async (
     content: string,
     role: 'user' | 'assistant',
-    citations?: Citation[],
+    extras?: { citations?: Citation[]; attachments?: Attachment[] },
   ) => {
     const lastMessage = messages.at(-1);
     const newMessage: Message =
@@ -249,8 +280,12 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
           { ...lastMessage, content: lastMessage.content + content }
         : { content, role };
 
-    if (citations?.length) {
-      newMessage.citations = citations;
+    if (extras?.citations?.length) {
+      newMessage.citations = extras.citations;
+    }
+
+    if (extras?.attachments?.length) {
+      newMessage.attachments = extras.attachments;
     }
 
     const isFirstMessage = messages.length === 0;
@@ -258,9 +293,31 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
 
     await saveMessages([...messages, newMessage]);
 
-    if (isFirstMessage) {
-      nameChat(chatId, content);
+    // A picture on its own is a whole question, and leaves nothing to name the
+    // chat after but what it was called on disk.
+    const summary =
+      content ||
+      newMessage.attachments?.map(({ name }) => name).join(', ') ||
+      '';
+
+    if (isFirstMessage && summary) {
+      nameChat(chatId, summary);
     }
+  };
+
+  // The reply to a question that has changed is no longer a reply to it, and
+  // neither is anything said after. Both go, and the edited question is asked
+  // again as the last thing in the conversation.
+  const editMessage = async (index: number, content: string) => {
+    await saveMessages(
+      messages
+        .slice(0, index + 1)
+        .map((message, i) => (i === index ? { ...message, content } : message)),
+    );
+  };
+
+  const dropMessagesFrom = async (index: number) => {
+    await saveMessages(messages.slice(0, index));
   };
 
   const togglePin = async (index: number) => {
@@ -308,6 +365,31 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
 
     if (!isMobile) {
       chatInputRef.current?.focus();
+    }
+  };
+
+  // Given a new id rather than the one it left with, which by now belongs to
+  // something else, and filed loose: the project it was in was a folder in
+  // whichever browser it came from.
+  const importChat = async (file: File) => {
+    try {
+      const { title, messages: imported } = parseChatFile(await file.text());
+      const allHistory = await getHistoryDB();
+      const id = allHistory.length > 0 ? allHistory.at(0)!.id + 1 : 1;
+      const tx = await getHistoryTransaction();
+
+      await Promise.all([
+        tx.store.put({ id, title, messages: imported }),
+        tx.done,
+      ]);
+
+      setHistory(await getHistoryDB());
+      setCurrentChatId(id);
+      setPendingProjectId(null);
+      closeDrawers();
+    } catch (error) {
+      console.error('Error importing the chat:', error);
+      alert('that file is not a chat exported from here.');
     }
   };
 
@@ -472,6 +554,16 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     setIsProjectEditorOpen(false);
   }
 
+  function openInstructions() {
+    setInstructionsVisit((visit) => visit + 1);
+    setIsInstructionsOpen(true);
+  }
+
+  function saveInstructions(updated: string) {
+    setCustomInstructions(updated);
+    localStorage.setItem('instructions', updated);
+  }
+
   function handleSelectModel(model: ResponsesModel) {
     setModel(model);
   }
@@ -517,6 +609,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
       createProject={() => editProject(null)}
       editProject={editProject}
       startProjectChat={startNewChat}
+      importChat={importChat}
     />
   );
 
@@ -567,6 +660,15 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
 
         <div className="flex justify-end">
           <button
+            onClick={openInstructions}
+            className={`${iconButton} hidden sm:flex`}
+            title="Custom instructions"
+            aria-label="Custom instructions"
+          >
+            <SlidersHorizontal className="h-5 w-5" />
+          </button>
+
+          <button
             onClick={openKeyModal}
             className={`${iconButton} hidden sm:flex`}
             title="Manage key"
@@ -613,10 +715,12 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
           <Messages
             messages={messages}
             addNewMessage={addNewMessage}
+            editMessage={editMessage}
+            dropMessagesFrom={dropMessagesFrom}
             model={model}
             thinkingLevel={thinkingLevel}
             togglePin={togglePin}
-            projectContext={projectContext}
+            instructions={instructions}
           />
 
           <div
@@ -652,6 +756,14 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
                 >
                   <PanelRight className="h-5 w-5 shrink-0" />
                   prompts
+                </button>
+
+                <button
+                  className="flex min-h-11 items-center gap-3 rounded-md px-3 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+                  onClick={openInstructions}
+                >
+                  <SlidersHorizontal className="h-5 w-5 shrink-0" />
+                  instructions
                 </button>
 
                 <button
@@ -703,6 +815,14 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
         confirmLabel="remove"
         onConfirm={confirmProjectRemoval}
         onCancel={() => setProjectPendingRemoval(null)}
+      />
+
+      <InstructionsModal
+        key={`instructions-${instructionsVisit}`}
+        isOpen={isInstructionsOpen}
+        instructions={customInstructions}
+        onSave={saveInstructions}
+        onClose={() => setIsInstructionsOpen(false)}
       />
 
       <ProjectSettings

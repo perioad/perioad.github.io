@@ -1,4 +1,4 @@
-import { KeyboardEvent, useState } from 'react';
+import { KeyboardEvent, useRef, useState } from 'react';
 import {
   ChevronDown,
   ChevronRight,
@@ -9,9 +9,10 @@ import {
   Plus,
   Settings2,
   Trash2,
+  Upload,
 } from 'lucide-react';
 import { HistoryRecord, Project } from '../models/db';
-import { downloadChat } from '../utils/exportChat';
+import { downloadChat } from '../utils/chatFile';
 import {
   sidebarEmptyNote,
   sidebarHeading,
@@ -36,6 +37,7 @@ interface HistoryProps {
   createProject: () => void;
   editProject: (project: Project) => void;
   startProjectChat: (projectId: number) => void;
+  importChat: (file: File) => void;
 }
 
 // Renders the list only. The container is the caller's business, because it is
@@ -51,7 +53,9 @@ export default function History({
   createProject,
   editProject,
   startProjectChat,
+  importChat,
 }: HistoryProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   // Renaming happens in the row rather than in a dialog. A dialog would have to
   // close the drawer it was opened from, because the two would otherwise fight
   // over the focus the drawer traps, and losing the list to rename one line in
@@ -273,17 +277,44 @@ export default function History({
         </ul>
       )}
 
+      {/* Shown even with nothing loose under it, for the same reason the
+          projects heading is: the button beside it is the only way in. */}
+      <div className={`${sidebarHeadingRow} mt-1`}>
+        <h2 className={sidebarHeading}>chats</h2>
+
+        <input
+          ref={fileInputRef}
+          className="hidden"
+          type="file"
+          accept="application/json,.json"
+          onChange={(event) => {
+            const [file] = Array.from(event.target.files ?? []);
+
+            if (file) importChat(file);
+
+            // Cleared so the same file can be picked again, which is otherwise
+            // not a change and fires nothing.
+            event.target.value = '';
+          }}
+        />
+
+        <button
+          className={sidebarHeadingAction}
+          title="Import chat"
+          aria-label="Import chat"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <Upload className="h-4 w-4" />
+        </button>
+      </div>
+
       {/* Nothing to say about an empty run of loose chats while the projects
           above are full of them. The note is for a visitor with no chats at all,
           who would otherwise be looking at a blank panel. */}
       {history.length === 0 && <p className={sidebarEmptyNote}>no chats yet</p>}
 
       {looseChats.length > 0 && (
-        <>
-          <h2 className={`${sidebarHeading} mt-1`}>chats</h2>
-
-          <ul className="flex flex-col gap-1">{looseChats.map(chatRow)}</ul>
-        </>
+        <ul className="flex flex-col gap-1">{looseChats.map(chatRow)}</ul>
       )}
     </div>
   );
