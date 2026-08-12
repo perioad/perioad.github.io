@@ -22,6 +22,12 @@ interface ChatInputProps {
   ref?: Ref<ChatInputHandle>;
 }
 
+// An on-screen keyboard is what each caller is working around, and a coarse
+// pointer is as close as a media query gets to asking whether there is one.
+function hasOnScreenKeyboard() {
+  return window.matchMedia('(pointer: coarse)').matches;
+}
+
 function fitToContent(
   element: HTMLTextAreaElement | HTMLDivElement | null,
   textarea: HTMLTextAreaElement | null,
@@ -108,7 +114,7 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
   useEffect(() => {
     // Focusing on mount throws up the on-screen keyboard before the user has
     // asked to type, covering most of the conversation on a phone.
-    if (window.matchMedia('(pointer: coarse)').matches) {
+    if (hasOnScreenKeyboard()) {
       return;
     }
 
@@ -163,7 +169,15 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
     addNewMessage(prompt, 'user');
     setPrompt('');
 
-    textareaRef.current?.focus();
+    // The keyboard covers most of a phone, including the reply that was the
+    // point of sending. Keeping focus would hold it open, since tapping send
+    // dismisses it on its own. Where the keyboard costs no room, focus stays
+    // put so the next message can be typed straight away.
+    if (hasOnScreenKeyboard()) {
+      textareaRef.current?.blur();
+    } else {
+      textareaRef.current?.focus();
+    }
 
     setTimeout(() => {
       setIsAnimating(false);
@@ -176,7 +190,7 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key !== 'Enter' || event.shiftKey) return;
 
-    if (window.matchMedia('(pointer: coarse)').matches) return;
+    if (hasOnScreenKeyboard()) return;
 
     event.preventDefault();
     handleSubmit(prompt.trim());
