@@ -15,11 +15,10 @@ const RECORDING_FORMATS = [
 
 export type RecordingStatus = 'idle' | 'recording' | 'transcribing';
 
-// A voice clears a quiet room by a wide margin on this scale, and the hold
-// carries the reading through the gaps between words, which are long enough to
-// make anything driven by the raw level flicker.
-const SPEAKING_THRESHOLD = 0.03;
-const SPEAKING_HOLD_MS = 300;
+// Lower than the 0.8 an analyser defaults to. That is smooth enough to lag
+// behind the voice it is drawing, and the point of drawing it is that it keeps
+// up.
+const LEVEL_SMOOTHING = 0.6;
 
 function getSupportedFormat() {
   if (typeof MediaRecorder === 'undefined') return undefined;
@@ -32,71 +31,36 @@ function getSupportedFormat() {
 export function useSpeechToText(onTranscript: (text: string) => void) {
   const [status, setStatus] = useState<RecordingStatus>('idle');
   const [error, setError] = useState<string | null>(null);
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const frameRef = useRef<number | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
 
   const [isSupported] = useState(
     () =>
       Boolean(navigator.mediaDevices?.getUserMedia) && !!getSupportedFormat(),
   );
 
-  // Whether there is a voice in the stream, rather than how loud it is. A level
-  // would be a new value on every frame, and the only question anything asks of
-  // it is whether the microphone is picking anything up.
-  function watchLoudness(stream: MediaStream) {
+  // Opened here because this is where the stream is, and handed out rather than
+  // read here: what the level is wanted for is drawing, and a reading taken on
+  // every frame would otherwise be a render on every frame.
+  function openAnalyser(stream: MediaStream) {
     const audioContext = new AudioContext();
     const analyser = audioContext.createAnalyser();
 
     analyser.fftSize = 512;
+    analyser.smoothingTimeConstant = LEVEL_SMOOTHING;
     audioContext.createMediaStreamSource(stream).connect(analyser);
+
     audioContextRef.current = audioContext;
-
-    const samples = new Uint8Array(analyser.fftSize);
-    let lastLoudAt = 0;
-
-    function measure() {
-      analyser.getByteTimeDomainData(samples);
-
-      // How far the waveform strays from the silent midpoint, which is what a
-      // voice does to it whatever the pitch.
-      let total = 0;
-
-      for (let i = 0; i < samples.length; i++) {
-        const deviation = (samples[i] - 128) / 128;
-
-        total += deviation * deviation;
-      }
-
-      if (Math.sqrt(total / samples.length) > SPEAKING_THRESHOLD) {
-        lastLoudAt = performance.now();
-      }
-
-      const speaking = performance.now() - lastLoudAt < SPEAKING_HOLD_MS;
-
-      setIsSpeaking((wasSpeaking) =>
-        wasSpeaking === speaking ? wasSpeaking : speaking,
-      );
-
-      frameRef.current = requestAnimationFrame(measure);
-    }
-
-    measure();
+    analyserRef.current = analyser;
   }
 
-  function stopWatchingLoudness() {
-    if (frameRef.current !== null) {
-      cancelAnimationFrame(frameRef.current);
-      frameRef.current = null;
-    }
-
+  function closeAnalyser() {
     audioContextRef.current?.close();
     audioContextRef.current = null;
-
-    setIsSpeaking(false);
+    analyserRef.current = null;
   }
 
   useEffect(() => {
@@ -106,10 +70,6 @@ export function useSpeechToText(onTranscript: (text: string) => void) {
     return () => {
       streamRef.current?.getTracks().forEach((track) => track.stop());
       audioContextRef.current?.close();
-
-      if (frameRef.current !== null) {
-        cancelAnimationFrame(frameRef.current);
-      }
     };
   }, []);
 
@@ -175,7 +135,7 @@ export function useSpeechToText(onTranscript: (text: string) => void) {
     recorder.onstop = () => {
       stream.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
-      stopWatchingLoudness();
+      closeAnalyser();
 
       const recording = new Blob(chunksRef.current, { type: format.mimeType });
 
@@ -188,7 +148,7 @@ export function useSpeechToText(onTranscript: (text: string) => void) {
     streamRef.current = stream;
 
     recorder.start();
-    watchLoudness(stream);
+    openAnalyser(stream);
     setStatus('recording');
   }
 
@@ -205,5 +165,5 @@ export function useSpeechToText(onTranscript: (text: string) => void) {
     }
   }
 
-  return { status, error, isSupported, isSpeaking, toggleRecording };
+  return { status, error, isSupported, analyserRef, toggleRecording };
 }

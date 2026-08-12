@@ -11,8 +11,6 @@
   --animate-bg-pattern: colorChange 5s linear infinite;
   --animate-fly-up: fly-up 0.5s ease-out forwards;
 
-  --animate-equalize: equalize 0.5s ease-in-out infinite alternate;
-
   /* Each direction has keyframes of its own rather than the one set played in
      reverse. Radix keeps a closing panel mounted by comparing the animation name
      before and after the state changes, so a shared name reads as no animation
@@ -56,15 +54,6 @@
     100% {
       transform: translateY(-6.25rem);
       opacity: 0;
-    }
-  }
-  /* `scale` rather than a transform, to match the utility the bars rest at. */
-  @keyframes equalize {
-    0% {
-      scale: 1 0.25;
-    }
-    100% {
-      scale: 1 1;
     }
   }
   @keyframes disappear {

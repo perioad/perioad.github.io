@@ -2,6 +2,7 @@ import {
   ChangeEvent,
   KeyboardEvent,
   Ref,
+  RefObject,
   useImperativeHandle,
   useRef,
   useState,
@@ -46,19 +47,72 @@ function fitToContent(
   element.style.height = `${newHeight}px`;
 }
 
-// Bars that rise and fall with a voice, and sit low and still without one. What
-// the button has to say while recording is that the microphone is listening and
-// whether it can hear anything, which a stop square says neither of.
-function SoundBars({ isSpeaking }: { isSpeaking: boolean }) {
+// Four bands off the bottom of the spectrum, which at this resolution is around
+// the first four and a half kilohertz. A voice lives there, and the bins above
+// carry so little that two of the bars would sit flat through a sentence.
+const BANDS = 4;
+const BINS_PER_BAND = 12;
+// A voice fills a fraction of the byte range even when it is loud, so the bars
+// would barely leave the floor at a true reading.
+const LEVEL_GAIN = 2.2;
+// Never all the way down, so four bars still read as four bars in a silence.
+const MIN_SCALE = 0.15;
+
+// Bars that follow the voice as it is spoken: each one is a band of the
+// spectrum, and its height is how much of the sound is in that band right now.
+// What the button has to say while recording is that the microphone is
+// listening and what it can hear, which a stop square says neither of.
+function SoundBars({
+  analyserRef,
+}: {
+  analyserRef: RefObject<AnalyserNode | null>;
+}) {
+  const barsRef = useRef<(HTMLSpanElement | null)[]>([]);
+
+  // Written straight to the elements rather than held in state. This runs on
+  // every frame for as long as the recording lasts, and rendering the component
+  // sixty times a second to move four bars is a great deal of React for four
+  // numbers.
+  useEffect(() => {
+    const analyser = analyserRef.current;
+
+    if (!analyser) return;
+
+    const spectrum = new Uint8Array(analyser.frequencyBinCount);
+
+    let frame = requestAnimationFrame(function paint() {
+      analyser.getByteFrequencyData(spectrum);
+
+      barsRef.current.forEach((bar, band) => {
+        if (!bar) return;
+
+        let total = 0;
+
+        for (let bin = 0; bin < BINS_PER_BAND; bin++) {
+          total += spectrum[band * BINS_PER_BAND + bin];
+        }
+
+        const level = ((total / BINS_PER_BAND) * LEVEL_GAIN) / 255;
+
+        bar.style.scale = `1 ${Math.max(MIN_SCALE, Math.min(1, level))}`;
+      });
+
+      frame = requestAnimationFrame(paint);
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [analyserRef]);
+
   return (
     <span className="flex h-5 items-center gap-0.75" aria-hidden>
-      {[0, 1, 2, 3].map((bar) => (
+      {Array.from({ length: BANDS }, (_, band) => (
         <span
-          key={bar}
-          className={`h-4 w-0.75 rounded-full bg-current ${isSpeaking ? 'animate-equalize' : 'scale-y-25'}`}
-          // Negative, so each bar starts part way through the cycle and the row
-          // reads as a wave rather than four bars moving as one.
-          style={{ animationDelay: `-${bar * 0.12}s` }}
+          key={band}
+          ref={(node) => {
+            barsRef.current[band] = node;
+          }}
+          className="h-4 w-0.75 rounded-full bg-current"
+          style={{ scale: `1 ${MIN_SCALE}` }}
         />
       ))}
     </span>
@@ -140,7 +194,7 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
   }[recording.status];
   const micStyles =
     recording.status === 'recording'
-      ? 'bg-slate-100 text-sky-500 dark:bg-slate-800'
+      ? 'bg-slate-100 dark:bg-slate-800'
       : 'bg-slate-100 aria-disabled:opacity-40 dark:bg-slate-800';
 
   const promptTrimmed = prompt.trim();
@@ -268,7 +322,7 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
               </div>
             )}
             {recording.status === 'recording' && (
-              <SoundBars isSpeaking={recording.isSpeaking} />
+              <SoundBars analyserRef={recording.analyserRef} />
             )}
             {recording.status === 'idle' && <Mic className="h-5 w-5" />}
           </button>
