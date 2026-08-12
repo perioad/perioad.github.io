@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { ChatModel, Model } from 'openai/resources/index.mjs';
+import { Model, ResponsesModel } from 'openai/resources/index.mjs';
 import OpenAI from 'openai';
 import { Spinner } from '../../../components/spinner/Spinner';
 
 interface ModelSelectProps {
-  model: ChatModel;
-  setModel: (model: ChatModel) => void;
+  model: ResponsesModel;
+  setModel: (model: ResponsesModel) => void;
 }
 
-// The models endpoint returns no capability metadata, so the endpoint a model
-// serves can only be inferred from its id.
-const NON_CHAT_MODEL_PATTERNS = [
+// The models endpoint returns no capability metadata, so what a model answers
+// with can only be inferred from its id.
+const UNSUPPORTED_MODEL_PATTERNS = [
   'audio',
   'realtime',
   'transcribe',
@@ -24,6 +24,10 @@ const NON_CHAT_MODEL_PATTERNS = [
   'babbage',
   'davinci',
   'instruct',
+  // The three below answer through Responses, so the api is no longer what
+  // rules them out. Codex expects `phase` back on every assistant message it is
+  // replayed, and a `Message` has nowhere to keep it; the other two are driven
+  // by tools this chat does not send.
   'codex',
   'computer-use',
   'deep-research',
@@ -44,11 +48,13 @@ const KNOWN_CHAT_MODEL_PREFIXES = [
   'o4',
 ];
 
-function servesChatCompletions(id: string): boolean {
-  if (NON_CHAT_MODEL_PATTERNS.some((pattern) => id.includes(pattern)))
+function isOffered(id: string): boolean {
+  if (UNSUPPORTED_MODEL_PATTERNS.some((pattern) => id.includes(pattern)))
     return false;
 
-  // Pro variants are served through the Responses API only.
+  // Also reachable now, and also held back: a pro model can spend minutes on a
+  // question, which wants background mode rather than a stream left open, and
+  // `gpt-5-pro` takes `high` alone where the header offers three levels.
   return !id.endsWith('-pro');
 }
 
@@ -59,9 +65,9 @@ function isKnownChatFamily(id: string): boolean {
 const SIX_MONTHS_IN_SECONDS = 182 * 24 * 60 * 60;
 
 interface GroupedModels {
-  latest: ChatModel[];
-  other: ChatModel[];
-  legacy: ChatModel[];
+  latest: ResponsesModel[];
+  other: ResponsesModel[];
+  legacy: ResponsesModel[];
 }
 
 // `created` is when the model object was made, not when it was announced. An
@@ -75,16 +81,14 @@ function groupModels(models: Model[]): GroupedModels {
   const newestFirst = [...models].sort((a, b) => b.created - a.created);
 
   for (const model of newestFirst) {
-    if (!servesChatCompletions(model.id)) continue;
-
-    const id = model.id as ChatModel;
+    if (!isOffered(model.id)) continue;
 
     if (!isKnownChatFamily(model.id)) {
-      grouped.other.push(id);
+      grouped.other.push(model.id);
     } else if (model.created >= legacyBefore) {
-      grouped.latest.push(id);
+      grouped.latest.push(model.id);
     } else {
-      grouped.legacy.push(id);
+      grouped.legacy.push(model.id);
     }
   }
 
@@ -95,10 +99,10 @@ function getDefaultModels(): GroupedModels {
   return { latest: ['gpt-4o', 'gpt-4o-mini'], other: [], legacy: [] };
 }
 
-const ModelOptionGroup: React.FC<{ label: string; models: ChatModel[] }> = ({
-  label,
-  models,
-}) => {
+const ModelOptionGroup: React.FC<{
+  label: string;
+  models: ResponsesModel[];
+}> = ({ label, models }) => {
   if (models.length === 0) return null;
 
   return (
@@ -144,14 +148,14 @@ const ModelSelect: React.FC<ModelSelectProps> = ({ model, setModel }) => {
   }, []);
 
   function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    setModel(e.target.value as ChatModel);
+    setModel(e.target.value);
     localStorage.setItem('model', e.target.value);
   }
 
   // Pinning the selection also covers a saved model that the filters drop,
   // which would otherwise leave the select with a value matching no option and
   // render it blank.
-  const withoutSelection = (ids: ChatModel[]) =>
+  const withoutSelection = (ids: ResponsesModel[]) =>
     ids.filter((id) => id !== model);
 
   return (
@@ -182,7 +186,7 @@ const ModelSelect: React.FC<ModelSelectProps> = ({ model, setModel }) => {
       {/* In the flow rather than hung off the right edge, which used to be empty
           space and is now the thinking level. */}
       {isLoading && (
-        <div className="h-5 w-5 mx-2 shrink-0">
+        <div className="mx-2 h-5 w-5 shrink-0">
           <Spinner />
         </div>
       )}

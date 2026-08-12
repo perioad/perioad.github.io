@@ -7,7 +7,7 @@ import { ArrowDown, Check, Copy, Pin, PinOff } from 'lucide-react';
 import useAiStream from '../hooks/useAiStream';
 import { Message } from '../models/chat';
 import { useScrollToBottom } from '../hooks/useScrollToBottom';
-import { ChatModel } from 'openai/resources/index.mjs';
+import { ResponsesModel } from 'openai/resources/index.mjs';
 import { ThinkingLevel } from '../utils/thinking';
 import PinnedBar from './PinnedBar';
 import { useMeasuredHeight } from '../hooks/useMeasuredHeight';
@@ -57,7 +57,7 @@ export default function Messages({
 }: {
   messages: Message[];
   addNewMessage: (content: string, role: 'user' | 'assistant') => void;
-  model: ChatModel;
+  model: ResponsesModel;
   thinkingLevel: ThinkingLevel;
   togglePin: (index: number) => void;
   projectContext: string | null;

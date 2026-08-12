@@ -32,16 +32,13 @@ export async function getAiTitle(content: string) {
     dangerouslyAllowBrowser: true,
   });
 
-  const response = await openai.chat.completions.create({
+  const response = await openai.responses.create({
     model: TITLE_MODEL,
-    reasoning_effort: 'minimal',
-    messages: [
-      {
-        role: 'user',
-        content: `Create a chat title in maximum 5 words based on this text without any symbols and without articles: ${content}`,
-      },
-    ],
+    reasoning: { effort: 'minimal' },
+    input: `Create a chat title in maximum 5 words based on this text without any symbols and without articles: ${content}`,
+    // The chat it is naming is never sent for storage either.
+    store: false,
   });
 
-  return tidyTitle(response.choices[0].message.content);
+  return tidyTitle(response.output_text);
 }

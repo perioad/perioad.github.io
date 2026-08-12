@@ -1,14 +1,14 @@
 import OpenAI from 'openai';
 import { useEffect, useRef } from 'react';
 import { Message } from '../models/chat';
-import { ChatModel } from 'openai/resources/index.mjs';
+import { ResponsesModel } from 'openai/resources/index.mjs';
 import { supportsThinking, ThinkingLevel } from '../utils/thinking';
 
 const useAiStream = (
   shouldRequest: boolean,
   messages: Message[],
   onNewChunk: (content: string) => Promise<void>,
-  model: ChatModel,
+  model: ResponsesModel,
   thinkingLevel: ThinkingLevel,
   projectContext: string | null,
 ) => {
@@ -55,30 +55,36 @@ const useAiStream = (
 
     const ask = async () => {
       try {
-        const stream = await openai.chat.completions.create({
+        const stream = await openai.responses.create({
           model,
-          messages: [
-            // Added to the request and not to the chat, so a project's
-            // instructions are never stored in the conversation, rendered in
-            // it, or replayed as something the visitor said.
-            ...(projectContext
-              ? [{ role: 'system' as const, content: projectContext }]
-              : []),
-            // Reduced to the two fields the api knows. `isPinned` rides along on
-            // the same objects and would be rejected as an unrecognised key.
-            ...messages.map(({ role, content }) => ({ role, content })),
-          ],
+          // Carried outside the conversation, so a project's instructions are
+          // never stored in it, rendered in it, or replayed as something the
+          // visitor said.
+          ...(projectContext && { instructions: projectContext }),
+          // Reduced to the two fields the api knows. `isPinned` rides along on
+          // the same objects and would be rejected as an unrecognised key.
+          input: messages.map(({ role, content }) => ({ role, content })),
           stream: true,
+          // Responses keeps the exchange for later retrieval unless told not
+          // to, where chat completions did not. The conversation belongs in
+          // this browser's IndexedDB and nowhere else.
+          store: false,
           // Checked here as well as in the header, so that a model without
           // reasoning never carries the parameter and the 400 it would cause.
-          ...(supportsThinking(model) && { reasoning_effort: thinkingLevel }),
+          ...(supportsThinking(model) && {
+            reasoning: { effort: thinkingLevel },
+          }),
         });
 
         let updatedMessage = '';
 
-        for await (const chunk of stream) {
-          const content = chunk.choices[0]?.delta?.content || '';
-          updatedMessage += content;
+        // One request can emit reasoning, tool and lifecycle events alongside
+        // the answer, so the text deltas are picked out rather than every
+        // event being treated as content the way chat completion chunks were.
+        for await (const event of stream) {
+          if (event.type !== 'response.output_text.delta') continue;
+
+          updatedMessage += event.delta;
           await onNewChunk(updatedMessage);
         }
       } catch (error) {

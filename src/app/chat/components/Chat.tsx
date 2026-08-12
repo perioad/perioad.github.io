@@ -16,7 +16,7 @@ import {
 } from '../utils/db';
 import { HistoryRecord } from '../models/db';
 import { Message } from '../models/chat';
-import { ChatModel } from 'openai/resources/index.mjs';
+import { ResponsesModel } from 'openai/resources/index.mjs';
 import PromptSidebar from './PromptSidebar';
 import { Project, Prompt } from '../models/db';
 import ModelSelect from './ModelSelect';
@@ -37,14 +37,10 @@ import {
 // Tailwind's `sm` starts at 40rem, so this is everything below it.
 const MOBILE_QUERY = '(max-width: 39.9375rem)';
 
-function getModelFromLocalStorage(): ChatModel {
+function getModelFromLocalStorage(): ResponsesModel {
   if (typeof window === 'undefined') return 'gpt-4o';
 
-  const savedModel = localStorage.getItem('model');
-
-  if (!savedModel) return 'gpt-4o';
-
-  return savedModel as ChatModel;
+  return localStorage.getItem('model') ?? 'gpt-4o';
 }
 
 function getThinkingLevelFromLocalStorage(): ThinkingLevel {
@@ -75,7 +71,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
   const [isHistoryVisible, setIsHistoryVisible] = useState(() =>
     getSavedPanelState('isHistoryVisible'),
   );
-  const [model, setModel] = useState<ChatModel>(getModelFromLocalStorage);
+  const [model, setModel] = useState<ResponsesModel>(getModelFromLocalStorage);
   const [thinkingLevel, setThinkingLevel] = useState<ThinkingLevel>(
     getThinkingLevelFromLocalStorage,
   );
@@ -443,7 +439,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     setChatPendingMove(chat);
   }
 
-  function handleSelectModel(model: ChatModel) {
+  function handleSelectModel(model: ResponsesModel) {
     setModel(model);
   }
 
