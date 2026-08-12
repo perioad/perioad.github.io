@@ -537,7 +537,10 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
         // Over the conversation rather than above it, so the messages carry on
         // under it instead of stopping at a line. `main` is fixed, which is the
         // containing block this is placed against.
-        className="absolute inset-x-0 top-0 z-20 grid grid-cols-[1fr_auto_1fr] items-center gap-2 bg-white/25 px-2 py-1 backdrop-blur-xs sm:px-4 sm:py-2 dark:bg-black/20"
+        // The buttons either side take what they need and the selects have the
+        // rest. `minmax(0, 1fr)` rather than `1fr`, whose floor is the width of
+        // what is in it, which for a select is its longest option.
+        className="absolute inset-x-0 top-0 z-20 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 bg-white/25 px-2 py-1 backdrop-blur-xs sm:px-4 sm:py-2 dark:bg-black/20"
       >
         <div className="flex justify-start">
           <button
@@ -551,7 +554,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
           </button>
         </div>
 
-        <div className="flex min-w-0 items-center gap-1">
+        <div className="flex min-w-0 items-center justify-center gap-1">
           <ModelSelect model={model} setModel={handleSelectModel} />
 
           {supportsThinking(model) && (

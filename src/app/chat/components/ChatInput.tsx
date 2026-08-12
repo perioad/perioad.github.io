@@ -220,7 +220,10 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
   }, [prompt]);
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-3 pt-1 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5 sm:pb-5">
+    // The same above as below, split out of what the two were spending between
+    // them rather than added to it, so the bar sits where it did and only looks
+    // even. The floor under the bottom is the home indicator's, not a choice.
+    <div className="mx-auto w-full max-w-4xl px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:px-5 sm:pt-3 sm:pb-3">
       {recording.error && (
         <p role="alert" className="mb-2 text-red-500">
           {recording.error}

@@ -158,12 +158,21 @@ const ModelSelect: React.FC<ModelSelectProps> = ({ model, setModel }) => {
   const withoutSelection = (ids: ResponsesModel[]) =>
     ids.filter((id) => id !== model);
 
+  // A fragment rather than a box of its own, so the select and the spinner are
+  // laid out by the header's row and the select can be given the space left
+  // over in it.
   return (
-    <div className="flex min-w-0 items-center gap-2">
+    <>
       <select
-        // Allowed to shrink past its width so that a narrow screen truncates the
-        // model name instead of pushing the header controls off the edge.
-        className="w-36 min-w-0 cursor-pointer rounded-md bg-slate-700 px-2 py-1 text-center text-ellipsis transition-all hover:bg-slate-800"
+        // Takes what the header has spare and shrinks past it on a narrow
+        // screen, truncating the model name rather than pushing the controls
+        // either side off the edge. Capped, because past the length of the
+        // longest model id the extra width says nothing.
+        //
+        // A select is as wide as its widest option unless it is told otherwise,
+        // and the options here are model ids, so the basis has to come from
+        // somewhere other than the content.
+        className="max-w-64 min-w-0 grow basis-0 cursor-pointer rounded-md bg-slate-700 px-2 py-1 text-center text-ellipsis transition-all hover:bg-slate-800"
         value={model}
         title={model}
         onChange={handleChange}
@@ -186,11 +195,11 @@ const ModelSelect: React.FC<ModelSelectProps> = ({ model, setModel }) => {
       {/* In the flow rather than hung off the right edge, which used to be empty
           space and is now the thinking level. */}
       {isLoading && (
-        <div className="mx-2 h-5 w-5 shrink-0">
+        <div className="h-5 w-5 shrink-0">
           <Spinner />
         </div>
       )}
-    </div>
+    </>
   );
 };
 

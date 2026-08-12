@@ -16,7 +16,10 @@ export default function ThinkingSelect({
 
   return (
     <select
-      className="w-24 shrink-0 cursor-pointer rounded-md bg-slate-700 px-2 py-1 text-center transition-all hover:bg-slate-800"
+      // Holds its width while the model beside it takes and gives back the
+      // room, since it is the one with a name long enough to need it. Shrinks
+      // only once that one has nothing left to give.
+      className="w-24 min-w-0 shrink cursor-pointer rounded-md bg-slate-700 px-2 py-1 text-center text-ellipsis transition-all hover:bg-slate-800"
       value={level}
       title="Thinking level"
       aria-label="Thinking level"
