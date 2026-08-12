@@ -2,6 +2,7 @@ import { KeyboardEvent, useState } from 'react';
 import {
   ChevronDown,
   ChevronRight,
+  Download,
   FolderInput,
   FolderPlus,
   Pencil,
@@ -10,6 +11,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { HistoryRecord, Project } from '../models/db';
+import { downloadChat } from '../utils/exportChat';
 import {
   sidebarEmptyNote,
   sidebarHeading,
@@ -20,6 +22,7 @@ import {
   sidebarRowActions,
   sidebarRowLabel,
   sidebarRowSelected,
+  sidebarRowTrack,
 } from '../utils/sidebarStyles';
 
 interface HistoryProps {
@@ -115,7 +118,7 @@ export default function History({
 
   const chatRow = (chat: HistoryRecord) => (
     <li
-      className={`${sidebarRow} ${chat.id === currentChatId ? sidebarRowSelected : ''}`}
+      className={`${sidebarRow} ${chat.id === currentChatId ? sidebarRowSelected : sidebarRowTrack}`}
       key={chat.id}
     >
       {renamingId === chat.id ? (
@@ -163,6 +166,15 @@ export default function History({
                 <FolderInput className="h-4 w-4" />
               </button>
             )}
+
+            <button
+              className={sidebarRowAction}
+              title={`Export chat: ${chat.title}`}
+              aria-label={`Export chat: ${chat.title}`}
+              onClick={() => downloadChat(chat)}
+            >
+              <Download className="h-4 w-4" />
+            </button>
 
             <button
               className={sidebarRowAction}

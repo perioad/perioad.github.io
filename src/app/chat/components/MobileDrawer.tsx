@@ -45,7 +45,7 @@ export default function MobileDrawer({
               requires and which is the only thing the bar was carrying. */}
           <Dialog.Title className="sr-only">{title}</Dialog.Title>
 
-          <div className="grow overflow-y-auto overscroll-contain">
+          <div className="scrollbar-hidden grow overflow-y-auto overscroll-contain">
             {children}
           </div>
 

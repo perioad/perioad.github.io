@@ -53,6 +53,17 @@ function getThinkingLevelFromLocalStorage(): ThinkingLevel {
   );
 }
 
+// Where the visitor was when they last closed the tab. Only a note of it: the
+// chat may have been removed since, so what is read here is checked against the
+// history before it is opened.
+function getSavedChatId(): number {
+  if (typeof window === 'undefined') return 1;
+
+  const saved = Number(localStorage.getItem('currentChatId'));
+
+  return Number.isInteger(saved) && saved > 0 ? saved : 1;
+}
+
 // A rail left open in a desktop session would come back as a drawer sitting on
 // top of the conversation, so the saved state is only restored on wide screens.
 function getSavedPanelState(key: string): boolean {
@@ -68,7 +79,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
   const measureHeader = useMeasuredHeight('--header-height');
   const measureComposer = useMeasuredHeight('--composer-height');
   const [history, setHistory] = useState<HistoryRecord[]>([]);
-  const [currentChatId, setCurrentChatId] = useState<number>(1);
+  const [currentChatId, setCurrentChatId] = useState<number>(getSavedChatId);
   const [isHistoryVisible, setIsHistoryVisible] = useState(() =>
     getSavedPanelState('isHistoryVisible'),
   );
@@ -139,7 +150,14 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
       const savedHistory = await getHistoryDB();
 
       setHistory(savedHistory);
-      setCurrentChatId(savedHistory.at(0)?.id ?? 1);
+      // The chat left open last time, unless it has since been removed or was
+      // an empty one that never got as far as a record. The newest is the
+      // answer then, as it was before any of this was remembered.
+      setCurrentChatId((openLastTime) =>
+        savedHistory.some(({ id }) => id === openLastTime)
+          ? openLastTime
+          : (savedHistory.at(0)?.id ?? 1),
+      );
     };
 
     fetchHistory();
@@ -463,6 +481,12 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     localStorage.setItem('thinking', level);
   }
 
+  // Written from here rather than from each of the four places that open a
+  // chat, so none of them can be added later without it.
+  useEffect(() => {
+    localStorage.setItem('currentChatId', currentChatId.toString());
+  }, [currentChatId]);
+
   useEffect(() => {
     if (isMobile) return;
 
@@ -576,7 +600,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
         {!isMobile && (
           <aside
             inert={!isHistoryVisible}
-            className={`${isHistoryVisible ? 'w-56' : 'w-0'} h-full shrink-0 overflow-y-auto pt-(--header-height,3.25rem) text-sm transition-all`}
+            className={`${isHistoryVisible ? 'w-56' : 'w-0'} scrollbar-hidden h-full shrink-0 overflow-y-auto pt-(--header-height,3.25rem) text-sm transition-all`}
           >
             {historyList}
           </aside>
@@ -603,7 +627,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
         {!isMobile && (
           <aside
             inert={!isPromptSidebarVisible}
-            className={`${isPromptSidebarVisible ? 'w-56' : 'w-0'} h-full shrink-0 overflow-y-auto pt-(--header-height,3.25rem) text-sm transition-all`}
+            className={`${isPromptSidebarVisible ? 'w-56' : 'w-0'} scrollbar-hidden h-full shrink-0 overflow-y-auto pt-(--header-height,3.25rem) text-sm transition-all`}
           >
             {promptList}
           </aside>

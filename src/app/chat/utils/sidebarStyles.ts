@@ -17,12 +17,18 @@ export const sidebarRow =
 // widths they collapse to until it is hovered.
 export const sidebarRowActions = '-mt-2 flex sm:contents justify-around';
 
-// A bar down the edge rather than a heavier fill, so the row being read stays
-// apart from the one under the pointer instead of being a shade of it. Drawn as
-// a pseudo element because a border would move the label two pixels the moment
-// a chat was opened.
-export const sidebarRowSelected =
-  'bg-slate-100 before:absolute before:inset-y-1 before:left-0 before:w-0.5 before:rounded-full before:bg-sky-500 dark:bg-slate-800';
+// Drawn as a pseudo element rather than a border, which would move the label
+// two pixels the moment a chat was opened.
+const track =
+  'before:absolute before:inset-y-1 before:left-0 before:w-0.5 before:rounded-full';
+
+// Every chat carries the bar, so the list has an edge to read down and the one
+// being read is a change of colour rather than something that appears.
+export const sidebarRowTrack = `${track} before:bg-slate-200 dark:before:bg-slate-700`;
+
+// The two are exclusive: a row takes one or the other, so nothing is left to
+// the order Tailwind happens to emit two background colours in.
+export const sidebarRowSelected = `${track} bg-slate-100 before:bg-sky-500 dark:bg-slate-800`;
 
 export const sidebarRowLabel =
   'min-h-11 grow overflow-hidden px-3 text-left text-ellipsis whitespace-nowrap sm:min-h-9';

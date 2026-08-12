@@ -147,9 +147,11 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
   const promptTrimmedForAnimation = promptForAnimation.trim();
   const isEmptyPrompt = promptTrimmed.length === 0;
 
-  // Matches the square buttons beside it, in the same unit so that the row stays
-  // aligned when the root font size is turned up.
-  const minHeight = '3.25rem';
+  // A line of text and the padding around it, which is also the smallest a
+  // target should be under a thumb. Matches the square buttons beside it, in the
+  // same unit so that the row stays aligned when the root font size is turned
+  // up.
+  const minHeight = '2.75rem';
 
   function handleTextAreaChange(event: ChangeEvent<HTMLTextAreaElement>) {
     const value: string = event.target.value;
@@ -228,7 +230,7 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
       <div className="relative flex">
         <textarea
           ref={textareaRef}
-          className="h-auto w-full resize-none rounded-md bg-slate-100 p-3 text-base leading-6 sm:text-sm dark:bg-slate-800"
+          className="h-auto w-full resize-none rounded-md bg-slate-100 px-3 py-2.5 text-base leading-6 sm:text-sm dark:bg-slate-800"
           style={{ minHeight }}
           rows={1}
           placeholder="Write your prompt here.."
@@ -240,7 +242,7 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
 
         <div
           ref={animatedTextRef}
-          className={`pointer-events-none absolute bottom-0 left-0 overflow-y-auto p-3 ${
+          className={`pointer-events-none absolute bottom-0 left-0 overflow-y-auto px-3 py-2.5 ${
             isAnimating ? 'visible animate-fly-up' : 'invisible'
           }`}
         >
@@ -251,7 +253,7 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
 
         {recording.isSupported && (
           <button
-            className={`${micStyles} ml-2 flex h-13 w-13 shrink-0 items-center justify-center self-end rounded-md transition-colors sm:ml-3`}
+            className={`${micStyles} ml-2 flex h-11 w-11 shrink-0 items-center justify-center self-end rounded-md transition-colors sm:ml-3`}
             aria-disabled={recording.status === 'transcribing'}
             title={micLabel}
             aria-label={micLabel}
@@ -270,7 +272,7 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
         )}
 
         <button
-          className="ml-2 flex h-13 w-13 shrink-0 items-center justify-center self-end rounded-md bg-slate-100 transition-all aria-disabled:opacity-40 sm:ml-3 dark:bg-slate-800"
+          className="ml-2 flex h-11 w-11 shrink-0 items-center justify-center self-end rounded-md bg-slate-100 transition-all aria-disabled:opacity-40 sm:ml-3 dark:bg-slate-800"
           aria-disabled={isEmptyPrompt}
           title="Send"
           aria-label="Send"
