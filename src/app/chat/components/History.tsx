@@ -10,6 +10,17 @@ import {
   Trash2,
 } from 'lucide-react';
 import { HistoryRecord, Project } from '../models/db';
+import {
+  sidebarEmptyNote,
+  sidebarHeading,
+  sidebarHeadingAction,
+  sidebarHeadingRow,
+  sidebarRow,
+  sidebarRowAction,
+  sidebarRowActions,
+  sidebarRowLabel,
+  sidebarRowSelected,
+} from '../utils/sidebarStyles';
 
 interface HistoryProps {
   history: HistoryRecord[];
@@ -23,11 +34,6 @@ interface HistoryProps {
   editProject: (project: Project) => void;
   startProjectChat: (projectId: number) => void;
 }
-
-const rowAction =
-  'flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-slate-200 sm:h-9 sm:w-0 sm:opacity-0 sm:group-hover:w-9 sm:group-hover:opacity-100 sm:focus-visible:w-9 sm:focus-visible:opacity-100 dark:hover:bg-slate-700';
-
-const emptyNote = 'px-3 py-2 text-slate-500 dark:text-slate-400';
 
 // Renders the list only. The container is the caller's business, because it is
 // an inline rail on desktop and a drawer on mobile.
@@ -109,7 +115,7 @@ export default function History({
 
   const chatRow = (chat: HistoryRecord) => (
     <li
-      className={`${chat.id === currentChatId ? 'bg-slate-100 dark:bg-slate-800' : ''} group flex items-center rounded-md`}
+      className={`${sidebarRow} ${chat.id === currentChatId ? sidebarRowSelected : ''}`}
       key={chat.id}
     >
       {renamingId === chat.id ? (
@@ -128,43 +134,45 @@ export default function History({
       ) : (
         <>
           <button
-            className="min-h-11 grow overflow-hidden px-3 text-left text-ellipsis whitespace-nowrap sm:min-h-9"
+            className={sidebarRowLabel}
             title={chat.title}
             onClick={() => selectChat(chat.id)}
           >
             {chat.title}
           </button>
 
-          <button
-            className={rowAction}
-            title={`Rename chat: ${chat.title}`}
-            aria-label={`Rename chat: ${chat.title}`}
-            onClick={() => startRename(chat)}
-          >
-            <Pencil className="h-4 w-4" />
-          </button>
-
-          {/* Nowhere to move a chat to until there is a project, and the row is
-              tight enough without a button that opens an empty list. */}
-          {projects.length > 0 && (
+          <div className={sidebarRowActions}>
             <button
-              className={rowAction}
-              title={`Move chat: ${chat.title}`}
-              aria-label={`Move chat: ${chat.title}`}
-              onClick={() => moveChat(chat)}
+              className={sidebarRowAction}
+              title={`Rename chat: ${chat.title}`}
+              aria-label={`Rename chat: ${chat.title}`}
+              onClick={() => startRename(chat)}
             >
-              <FolderInput className="h-4 w-4" />
+              <Pencil className="h-4 w-4" />
             </button>
-          )}
 
-          <button
-            className={rowAction}
-            title={`Remove chat: ${chat.title}`}
-            aria-label={`Remove chat: ${chat.title}`}
-            onClick={() => removeChat(chat)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+            {/* Nowhere to move a chat to until there is a project, and the row
+                is tight enough without a button that opens an empty list. */}
+            {projects.length > 0 && (
+              <button
+                className={sidebarRowAction}
+                title={`Move chat: ${chat.title}`}
+                aria-label={`Move chat: ${chat.title}`}
+                onClick={() => moveChat(chat)}
+              >
+                <FolderInput className="h-4 w-4" />
+              </button>
+            )}
+
+            <button
+              className={sidebarRowAction}
+              title={`Remove chat: ${chat.title}`}
+              aria-label={`Remove chat: ${chat.title}`}
+              onClick={() => removeChat(chat)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
         </>
       )}
     </li>
@@ -172,13 +180,20 @@ export default function History({
 
   return (
     <div className="flex flex-col gap-1 p-2">
-      <button
-        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-md transition-colors hover:bg-slate-100 sm:min-h-9 dark:bg-slate-700 dark:hover:bg-slate-600"
-        onClick={createProject}
-      >
-        <FolderPlus className="h-4 w-4" />
-        new project
-      </button>
+      {/* Shown even with no projects under it, because the button beside it is
+          the only way to make the first one. */}
+      <div className={sidebarHeadingRow}>
+        <h2 className={sidebarHeading}>projects</h2>
+
+        <button
+          className={sidebarHeadingAction}
+          title="New project"
+          aria-label="New project"
+          onClick={createProject}
+        >
+          <FolderPlus className="h-4 w-4" />
+        </button>
+      </div>
 
       {projects.length > 0 && (
         <ul className="flex flex-col gap-1">
@@ -192,7 +207,7 @@ export default function History({
 
             return (
               <li key={project.id}>
-                <div className="group flex items-center rounded-md">
+                <div className={sidebarRow}>
                   <button
                     className="flex min-h-11 grow items-center gap-2 overflow-hidden px-2 text-left sm:min-h-9"
                     onClick={() => toggleProject(project.id!, isExpanded)}
@@ -210,29 +225,31 @@ export default function History({
                     </span>
                   </button>
 
-                  <button
-                    className={rowAction}
-                    title={`New chat in ${project.title}`}
-                    aria-label={`New chat in ${project.title}`}
-                    onClick={() => startProjectChat(project.id!)}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
+                  <div className={sidebarRowActions}>
+                    <button
+                      className={sidebarRowAction}
+                      title={`New chat in ${project.title}`}
+                      aria-label={`New chat in ${project.title}`}
+                      onClick={() => startProjectChat(project.id!)}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
 
-                  <button
-                    className={rowAction}
-                    title={`Project settings: ${project.title}`}
-                    aria-label={`Project settings: ${project.title}`}
-                    onClick={() => editProject(project)}
-                  >
-                    <Settings2 className="h-4 w-4" />
-                  </button>
+                    <button
+                      className={sidebarRowAction}
+                      title={`Project settings: ${project.title}`}
+                      aria-label={`Project settings: ${project.title}`}
+                      onClick={() => editProject(project)}
+                    >
+                      <Settings2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
 
                 {isExpanded && (
-                  <ul className="ml-4 flex flex-col gap-1 border-l border-slate-300 pl-1 dark:border-slate-700">
+                  <ul className="mt-1 ml-5 flex flex-col gap-1">
                     {chats.length === 0 ? (
-                      <li className={emptyNote}>no chats yet</li>
+                      <li className={sidebarEmptyNote}>no chats yet</li>
                     ) : (
                       chats.map(chatRow)
                     )}
@@ -247,10 +264,14 @@ export default function History({
       {/* Nothing to say about an empty run of loose chats while the projects
           above are full of them. The note is for a visitor with no chats at all,
           who would otherwise be looking at a blank panel. */}
-      {history.length === 0 && <p className={emptyNote}>no chats yet</p>}
+      {history.length === 0 && <p className={sidebarEmptyNote}>no chats yet</p>}
 
       {looseChats.length > 0 && (
-        <ul className="flex flex-col gap-1">{looseChats.map(chatRow)}</ul>
+        <>
+          <h2 className={`${sidebarHeading} mt-1`}>chats</h2>
+
+          <ul className="flex flex-col gap-1">{looseChats.map(chatRow)}</ul>
+        </>
       )}
     </div>
   );

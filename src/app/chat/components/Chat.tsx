@@ -587,7 +587,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
         {!isMobile && (
           <aside
             inert={!isHistoryVisible}
-            className={`${isHistoryVisible ? 'w-56' : 'w-0'} h-full shrink-0 overflow-y-auto border-r border-r-slate-800 pt-(--header-height,3.25rem) text-sm transition-all`}
+            className={`${isHistoryVisible ? 'w-56' : 'w-0'} h-full shrink-0 overflow-y-auto pt-(--header-height,3.25rem) text-sm transition-all`}
           >
             {historyList}
           </aside>
@@ -614,7 +614,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
         {!isMobile && (
           <aside
             inert={!isPromptSidebarVisible}
-            className={`${isPromptSidebarVisible ? 'w-56' : 'w-0'} h-full shrink-0 overflow-y-auto border-l border-l-slate-800 pt-(--header-height,3.25rem) text-sm transition-all`}
+            className={`${isPromptSidebarVisible ? 'w-56' : 'w-0'} h-full shrink-0 overflow-y-auto pt-(--header-height,3.25rem) text-sm transition-all`}
           >
             {promptList}
           </aside>
@@ -628,7 +628,6 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
             onOpenChange={showHistory}
             side="left"
             title="history"
-            isTitleHidden
             footer={
               <div className="flex flex-col gap-1">
                 <button

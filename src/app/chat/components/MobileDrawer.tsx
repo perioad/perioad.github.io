@@ -1,6 +1,5 @@
 import { ReactNode } from 'react';
 import { Dialog } from 'radix-ui';
-import { X } from 'lucide-react';
 
 interface MobileDrawerProps {
   isOpen: boolean;
@@ -9,9 +8,6 @@ interface MobileDrawerProps {
   title: string;
   children: ReactNode;
   footer?: ReactNode;
-  // Hidden from the eye only. Radix wants every dialog named, and the name is
-  // what a screen reader announces when the drawer takes focus.
-  isTitleHidden?: boolean;
 }
 
 // Radix handles what a hand-rolled panel would not: focus is trapped and
@@ -24,12 +20,11 @@ export default function MobileDrawer({
   title,
   children,
   footer,
-  isTitleHidden,
 }: MobileDrawerProps) {
   const sideStyles =
     side === 'left'
-      ? 'left-0 border-r data-[state=open]:animate-drawer-in-left data-[state=closed]:animate-drawer-out-left'
-      : 'right-0 border-l data-[state=open]:animate-drawer-in-right data-[state=closed]:animate-drawer-out-right';
+      ? 'left-0 data-[state=open]:animate-drawer-in-left data-[state=closed]:animate-drawer-out-left'
+      : 'right-0 data-[state=open]:animate-drawer-in-right data-[state=closed]:animate-drawer-out-right';
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={onOpenChange}>
@@ -40,27 +35,21 @@ export default function MobileDrawer({
           // The title says everything there is to say about a list of chats,
           // and Radix warns unless the absence is deliberate.
           aria-describedby={undefined}
-          className={`fixed inset-y-0 z-50 flex w-[85%] max-w-xs flex-col border-slate-800 bg-white/25 text-base backdrop-blur-xs dark:bg-black/20 ${sideStyles}`}
+          className={`fixed inset-y-0 z-50 flex w-[85%] max-w-xs flex-col bg-white/25 text-base backdrop-blur-xs dark:bg-black/20 ${sideStyles}`}
         >
-          <div className="flex items-center justify-between border-b border-slate-800 py-2 pr-2 pl-4">
-            <Dialog.Title className={isTitleHidden ? 'sr-only' : 'text-sm'}>
-              {title}
-            </Dialog.Title>
-
-            <Dialog.Close
-              className="flex h-11 w-11 items-center justify-center rounded-md transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
-              aria-label={`Close ${title}`}
-            >
-              <X className="h-5 w-5" />
-            </Dialog.Close>
-          </div>
+          {/* No bar across the top: no close button, since the scrim, Escape
+              and the back gesture all dismiss it, and no visible title, since
+              the panel below heads its own sections and would say the word
+              twice. The name is still here for a screen reader, which Radix
+              requires and which is the only thing the bar was carrying. */}
+          <Dialog.Title className="sr-only">{title}</Dialog.Title>
 
           <div className="grow overflow-y-auto overscroll-contain">
             {children}
           </div>
 
           {footer && (
-            <div className="border-t border-slate-800 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+            <div className="p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
               {footer}
             </div>
           )}
