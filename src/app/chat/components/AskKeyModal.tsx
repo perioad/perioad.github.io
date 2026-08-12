@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import Modal from '../../components/Modal';
+import Modal, { modalField } from '../../components/Modal';
 
 export default function AskKeyModal({
   isOpen,
@@ -38,7 +38,7 @@ export default function AskKeyModal({
         api key:
       </label>
       <input
-        className="w-full rounded-md border p-2 dark:bg-slate-700"
+        className={modalField}
         type="text"
         minLength={1}
         id="apikey"

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { Prompt } from '../models/db';
-import Modal from '../../components/Modal';
+import Modal, { modalField } from '../../components/Modal';
 import {
   sidebarEmptyNote,
   sidebarHeading,
@@ -19,19 +19,16 @@ interface PromptSidebarProps {
   updatePrompt: (id: number, title: string, content: string) => Promise<void>;
   removePrompt: (prompt: Prompt) => void;
   choosePrompt: (prompt: Prompt) => void;
-  onEditorOpen?: () => void;
 }
 
 // Renders the list only, like `History`: the caller decides between rail and
-// drawer. `onEditorOpen` lets the mobile drawer get out of the way, since the
-// editor needs the whole screen there.
+// drawer.
 export default function PromptSidebar({
   prompts,
   addPrompt,
   updatePrompt,
   removePrompt,
   choosePrompt,
-  onEditorOpen,
 }: PromptSidebarProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -43,7 +40,6 @@ export default function PromptSidebar({
     setTitle(prompt?.title ?? '');
     setContent(prompt?.content ?? '');
     setIsModalOpen(true);
-    onEditorOpen?.();
   }
 
   function closeEditor() {
@@ -122,13 +118,13 @@ export default function PromptSidebar({
         title={editingPrompt ? 'edit prompt' : 'create prompt'}
       >
         <input
-          className="mb-4 w-full rounded-sm bg-slate-700 p-3"
+          className={`${modalField} mb-4`}
           placeholder="gordon ramsay"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
         <textarea
-          className="mb-4 w-full rounded-sm bg-slate-700 p-3"
+          className={`${modalField} mb-4`}
           placeholder="you're gordon ramsay. teach me how to cook lasagna. pls don't scream"
           value={content}
           rows={4}

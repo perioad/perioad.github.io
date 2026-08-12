@@ -26,6 +26,7 @@ import ProjectPicker from './ProjectPicker';
 import ProjectSettings from './ProjectSettings';
 import ThinkingSelect from './ThinkingSelect';
 import { useMediaQuery } from '../../../hooks/useMediaQuery';
+import { useRetainedValue } from '../../../hooks/useRetainedValue';
 import { useMeasuredHeight } from '../hooks/useMeasuredHeight';
 import {
   DEFAULT_THINKING_LEVEL,
@@ -94,9 +95,21 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     null,
   );
   const [isProjectEditorOpen, setIsProjectEditorOpen] = useState(false);
+  // Bumped on every open, as the key that gives the editor a clean form. It has
+  // to stay mounted after it closes to animate out, so a fresh mount can no
+  // longer be had by unmounting it.
+  const [projectEditorVisit, setProjectEditorVisit] = useState(0);
   // Where the next chat will be filed. A chat has no record until its first
   // message, so until then the project it was started from lives here.
   const [pendingProjectId, setPendingProjectId] = useState<number | null>(null);
+
+  // A dialog is still on screen for as long as it takes to fade, by which point
+  // the state that opened it has been cleared. These keep it saying the name it
+  // opened with instead of emptying out mid-animation.
+  const chatBeingMoved = useRetainedValue(chatPendingMove);
+  const chatBeingRemoved = useRetainedValue(chatPendingRemoval);
+  const promptBeingRemoved = useRetainedValue(promptPendingRemoval);
+  const projectBeingRemoved = useRetainedValue(projectPendingRemoval);
 
   const currentHistory = useMemo(
     () => history.find(({ id }) => id === currentChatId),
@@ -257,6 +270,9 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     }
   }
 
+  // For the things that take the visitor back to the conversation, and not for
+  // opening a dialog: those stack on top and leave the list where it was, so
+  // the chat being moved or removed is still on screen behind them.
   function closeDrawers() {
     if (isMobile) {
       setIsHistoryVisible(false);
@@ -366,8 +382,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     await tx.done;
 
     setProjects(await getProjectsDB());
-    setIsProjectEditorOpen(false);
-    setProjectBeingEdited(null);
+    closeProjectEditor();
   };
 
   const confirmProjectRemoval = async () => {
@@ -400,6 +415,9 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     setProjects(await getProjectsDB());
     setHistory(await getHistoryDB());
     setProjectPendingRemoval(null);
+    // Asked for from the settings dialog, which is still open underneath and
+    // now describes a project that is gone.
+    closeProjectEditor();
   };
 
   const moveChat = async (chatId: number, projectId: number | null) => {
@@ -425,26 +443,15 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
   };
 
   function editProject(project: Project | null) {
-    closeDrawers();
     setProjectBeingEdited(project);
+    setProjectEditorVisit((visit) => visit + 1);
     setIsProjectEditorOpen(true);
   }
 
+  // The project it was opened for is left behind rather than cleared, so the
+  // dialog still names it on the way out.
   function closeProjectEditor() {
     setIsProjectEditorOpen(false);
-    setProjectBeingEdited(null);
-  }
-
-  function requestProjectRemoval(project: Project) {
-    // The settings dialog is the only way in, so it steps aside rather than
-    // stacking a second dialog on top of itself.
-    closeProjectEditor();
-    setProjectPendingRemoval(project);
-  }
-
-  function requestChatMove(chat: HistoryRecord) {
-    closeDrawers();
-    setChatPendingMove(chat);
   }
 
   function handleSelectModel(model: ResponsesModel) {
@@ -454,23 +461,6 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
   function handleSelectThinkingLevel(level: ThinkingLevel) {
     setThinkingLevel(level);
     localStorage.setItem('thinking', level);
-  }
-
-  function handleOpenKeyModal() {
-    closeDrawers();
-    openKeyModal();
-  }
-
-  // A drawer holds a focus trap, so anything that opens a dialog has to close it
-  // first or the two fight over the focused element.
-  function requestChatRemoval(chat: HistoryRecord) {
-    closeDrawers();
-    setChatPendingRemoval(chat);
-  }
-
-  function requestPromptRemoval(prompt: Prompt) {
-    closeDrawers();
-    setPromptPendingRemoval(prompt);
   }
 
   useEffect(() => {
@@ -496,9 +486,9 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
       history={history}
       projects={projects}
       selectChat={selectChat}
-      removeChat={requestChatRemoval}
+      removeChat={setChatPendingRemoval}
       renameChat={renameChat}
-      moveChat={requestChatMove}
+      moveChat={setChatPendingMove}
       currentChatId={currentChatId}
       createProject={() => editProject(null)}
       editProject={editProject}
@@ -511,9 +501,8 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
       prompts={prompts}
       addPrompt={addPrompt}
       updatePrompt={updatePrompt}
-      removePrompt={requestPromptRemoval}
+      removePrompt={setPromptPendingRemoval}
       choosePrompt={choosePrompt}
-      onEditorOpen={closeDrawers}
     />
   );
 
@@ -551,7 +540,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
 
         <div className="flex justify-end">
           <button
-            onClick={handleOpenKeyModal}
+            onClick={openKeyModal}
             className={`${iconButton} hidden sm:flex`}
             title="Manage key"
             aria-label="Manage key"
@@ -640,7 +629,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
 
                 <button
                   className="flex min-h-11 items-center gap-3 rounded-md px-3 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
-                  onClick={handleOpenKeyModal}
+                  onClick={openKeyModal}
                 >
                   <KeyRound className="h-5 w-5 shrink-0" />
                   manage key
@@ -665,7 +654,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
       <ConfirmDialog
         isOpen={chatPendingRemoval !== null}
         title="remove chat"
-        message={`are you sure you want to remove "${chatPendingRemoval?.title}"?`}
+        message={`are you sure you want to remove "${chatBeingRemoved?.title}"?`}
         confirmLabel="remove"
         onConfirm={confirmChatRemoval}
         onCancel={() => setChatPendingRemoval(null)}
@@ -674,7 +663,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
       <ConfirmDialog
         isOpen={promptPendingRemoval !== null}
         title="remove prompt"
-        message={`are you sure you want to remove "${promptPendingRemoval?.title}"?`}
+        message={`are you sure you want to remove "${promptBeingRemoved?.title}"?`}
         confirmLabel="remove"
         onConfirm={confirmPromptRemoval}
         onCancel={() => setPromptPendingRemoval(null)}
@@ -683,24 +672,25 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
       <ConfirmDialog
         isOpen={projectPendingRemoval !== null}
         title="remove project"
-        message={`are you sure you want to remove "${projectPendingRemoval?.title}"? its chats stay, without a project.`}
+        message={`are you sure you want to remove "${projectBeingRemoved?.title}"? its chats stay, without a project.`}
         confirmLabel="remove"
         onConfirm={confirmProjectRemoval}
         onCancel={() => setProjectPendingRemoval(null)}
       />
 
-      {isProjectEditorOpen && (
-        <ProjectSettings
-          project={projectBeingEdited}
-          onClose={closeProjectEditor}
-          onSave={saveProject}
-          onRemove={requestProjectRemoval}
-        />
-      )}
+      <ProjectSettings
+        key={projectEditorVisit}
+        isOpen={isProjectEditorOpen}
+        project={projectBeingEdited}
+        onClose={closeProjectEditor}
+        onSave={saveProject}
+        onRemove={setProjectPendingRemoval}
+      />
 
-      {chatPendingMove && (
+      {chatBeingMoved && (
         <ProjectPicker
-          chat={chatPendingMove}
+          isOpen={chatPendingMove !== null}
+          chat={chatBeingMoved}
           projects={projects}
           onPick={moveChat}
           onClose={() => setChatPendingMove(null)}

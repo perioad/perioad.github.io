@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { Dialog } from 'radix-ui';
+import { monospace } from '../../fonts';
 
 interface MobileDrawerProps {
   isOpen: boolean;
@@ -35,7 +36,7 @@ export default function MobileDrawer({
           // The title says everything there is to say about a list of chats,
           // and Radix warns unless the absence is deliberate.
           aria-describedby={undefined}
-          className={`fixed inset-y-0 z-50 flex w-[85%] max-w-xs flex-col bg-white/25 text-base backdrop-blur-xs dark:bg-black/20 ${sideStyles}`}
+          className={`${monospace.className} fixed inset-y-0 z-50 flex w-[85%] max-w-xs flex-col bg-white/25 text-base backdrop-blur-xs dark:bg-black/20 ${sideStyles}`}
         >
           {/* No bar across the top: no close button, since the scrim, Escape
               and the back gesture all dismiss it, and no visible title, since

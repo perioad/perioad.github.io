@@ -1,18 +1,22 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import Modal from '../../components/Modal';
+import Modal, { modalField } from '../../components/Modal';
 import { Project } from '../models/db';
 
 interface ProjectSettingsProps {
+  isOpen: boolean;
   project: Project | null;
   onClose: () => void;
   onSave: (project: Project) => Promise<void>;
   onRemove: (project: Project) => void;
 }
 
-// Mounted only while it is open, so each visit starts from the saved project
-// rather than from whatever was typed and abandoned the last time.
+// Remounted on every visit by the key the caller gives it, so each one starts
+// from the saved project rather than from whatever was typed and abandoned the
+// last time. It cannot simply be unmounted on close instead: it has to stay
+// long enough to animate out.
 export default function ProjectSettings({
+  isOpen,
   project,
   onClose,
   onSave,
@@ -35,7 +39,7 @@ export default function ProjectSettings({
 
   return (
     <Modal
-      isOpen
+      isOpen={isOpen}
       onClose={onClose}
       title={project?.id ? 'project settings' : 'new project'}
     >
@@ -43,7 +47,7 @@ export default function ProjectSettings({
         name
       </label>
       <input
-        className="mb-4 w-full rounded-sm bg-slate-700 p-3"
+        className={`${modalField} mb-4`}
         placeholder="job hunt"
         value={title}
         onChange={(event) => setTitle(event.target.value)}
@@ -53,7 +57,7 @@ export default function ProjectSettings({
         instructions
       </label>
       <textarea
-        className="mb-4 w-full rounded-sm bg-slate-700 p-3"
+        className={`${modalField} mb-4`}
         placeholder="you're my career coach. be blunt, keep it to bullet points, ask before rewriting anything"
         value={instructions}
         rows={4}

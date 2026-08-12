@@ -3,12 +3,10 @@
 import { useEffect, useState } from 'react';
 import AskKeyModal from './components/AskKeyModal';
 import Chat from './components/Chat';
-import { Source_Code_Pro } from 'next/font/google';
 import { Spinner } from '../../components/spinner/Spinner';
 import { useVisualViewport } from '../../hooks/useVisualViewport';
 import { useClientValue } from '../../hooks/useClientValue';
-
-const font = Source_Code_Pro({ weight: '400', subsets: ['latin'] });
+import { monospace } from '../fonts';
 
 const ready = () => true;
 const hasApiKey = () => localStorage.getItem('key') !== null;
@@ -68,7 +66,7 @@ export default function ChatPage() {
 
   return (
     <main
-      className={`${font.className} fixed inset-x-0 top-0 flex h-dvh flex-col text-sm`}
+      className={`${monospace.className} fixed inset-x-0 top-0 flex h-dvh flex-col text-sm`}
       style={viewportStyle}
     >
       <AskKeyModal closeModal={closeModal} isOpen={isKeyModalDisplayed} />
