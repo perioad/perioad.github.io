@@ -1,12 +1,34 @@
 import OpenAI from 'openai';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { getSavedVoice, getSavedVoicePrompt } from '../utils/voices';
 
 const SPEECH_MODEL = 'gpt-4o-mini-tts';
-const VOICE = 'alloy';
 
-// The speech endpoint rejects any input over 4096 characters, so a long reply
-// has to be sent as several requests and played back to back.
-const MAX_INPUT_LENGTH = 4096;
+// Four zero samples of 16-bit mono PCM: the shortest valid WAV that `play`
+// will accept. Played inside the click so the element earns Safari's
+// permission to play; what it plays is nothing.
+const SILENCE =
+  'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAAAA';
+
+// A long reply has to be sent as several requests and played back to back:
+// gpt-4o-mini-tts caps input at 2000 tokens (the endpoint's own cap is 4096
+// characters). Characters per token depends on the script — roughly 4 for
+// English but near 1 for CJK — so 1500 characters keeps a chunk under the
+// token cap whatever the reply is written in.
+const MAX_INPUT_LENGTH = 1500;
+
+// The wait before the first sound is the generation time of the first chunk,
+// and generation runs at roughly six times playback speed. A full 1500-char
+// chunk is ~2 minutes of speech and ~20 seconds of generating; 300 characters
+// open in a few seconds, and the ~25 seconds they take to say cover the
+// generation of the full-sized chunk behind them.
+const FIRST_CHUNK_LENGTH = 300;
+
+// Generated speech is kept by what was asked for, so playing a reply again —
+// or resuming after a stop — costs no request and starts at once. A full
+// chunk is ~2MB of mp3, so 20 entries cap the hold at ~40MB.
+const CACHE_LIMIT = 20;
+const speechCache = new Map<string, Blob>();
 
 // Markdown is written to be looked at. Read out as it is, a bulleted list of
 // emphasised terms becomes a recital of asterisks and backticks, so the marks
@@ -31,20 +53,26 @@ function toChunks(text: string): string[] {
   const sentences = text.match(/[^.!?\n]+[.!?\n]*/g) ?? [text];
   const chunks: string[] = [];
   let current = '';
+  const limit = () =>
+    chunks.length === 0 ? FIRST_CHUNK_LENGTH : MAX_INPUT_LENGTH;
 
   for (const sentence of sentences) {
-    if (current.length + sentence.length <= MAX_INPUT_LENGTH) {
+    if (current.length + sentence.length <= limit()) {
       current += sentence;
       continue;
     }
 
     if (current) chunks.push(current);
 
-    // A single sentence past the limit has no good seam, so it gets a hard one.
+    // A single sentence past the limit has no good seam, so it gets a hard
+    // one. The cut is taken before the push moves `limit` to the next tier,
+    // so both slices agree on where it lands.
     let rest = sentence;
-    while (rest.length > MAX_INPUT_LENGTH) {
-      chunks.push(rest.slice(0, MAX_INPUT_LENGTH));
-      rest = rest.slice(MAX_INPUT_LENGTH);
+    while (rest.length > limit()) {
+      const cut = limit();
+
+      chunks.push(rest.slice(0, cut));
+      rest = rest.slice(cut);
     }
 
     current = rest;
@@ -85,6 +113,18 @@ export function useReadAloud(): ReadAloud {
   const [speakingIndex, setSpeakingIndex] = useState<number | null>(null);
   const [loadingIndex, setLoadingIndex] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Where the last pause landed: which chunk and how far into it. Held with
+  // the content it was measured against, so a regenerated reply under the
+  // same index starts over instead of resuming into different words.
+  const pausedRef = useRef<{
+    index: number;
+    content: string;
+    chunk: number;
+    time: number;
+  } | null>(null);
+  // Which chunk the loop is currently playing, readable from the click that
+  // pauses it.
+  const chunkRef = useRef(0);
 
   const stop = useCallback(() => {
     sessionRef.current += 1;
@@ -106,6 +146,18 @@ export function useReadAloud(): ReadAloud {
   const toggle = useCallback(
     async (index: number, content: string) => {
       if (speakingIndex === index || loadingIndex === index) {
+        // Only sound that was actually playing leaves a place to come back
+        // to; pausing during the load keeps whatever position the load was
+        // aimed at.
+        if (speakingIndex === index && audioRef.current) {
+          pausedRef.current = {
+            index,
+            content,
+            chunk: chunkRef.current,
+            time: audioRef.current.currentTime,
+          };
+        }
+
         stop();
         setLoadingIndex(null);
 
@@ -125,25 +177,64 @@ export function useReadAloud(): ReadAloud {
       setError(null);
       setLoadingIndex(index);
 
+      // Safari only allows `play` on an element the user's gesture touched,
+      // and the real audio arrives long after this click has ended. One
+      // element is unlocked here by playing silence while the gesture is
+      // live, then reused for every chunk: a fresh `new Audio` per chunk
+      // would be refused with NotAllowedError. The silent play's own promise
+      // is discarded — setting the first chunk's src interrupts it.
+      const audio = new Audio(SILENCE);
+      audio.play().catch(() => {});
+      audioRef.current = audio;
+
       const session = sessionRef.current;
       const isCurrent = () => sessionRef.current === session;
 
+      // Read at the moment of asking rather than held anywhere, so a voice
+      // or prompt changed mid-conversation is what the next press uses.
+      const voice = getSavedVoice();
+      const prompt = getSavedVoicePrompt();
+
       const openai = new OpenAI({ apiKey, dangerouslyAllowBrowser: true });
       const fetchAudioUrl = async (input: string) => {
+        const key = `${voice}|${prompt}|${input}`;
+        const held = speechCache.get(key);
+
+        if (held) return URL.createObjectURL(held);
+
         const speech = await openai.audio.speech.create({
           model: SPEECH_MODEL,
-          voice: VOICE,
+          voice,
           input,
+          instructions: prompt || undefined,
         });
 
-        return URL.createObjectURL(await speech.blob());
+        const blob = await speech.blob();
+
+        speechCache.set(key, blob);
+
+        // Insertion order is eviction order, which drops the reply listened
+        // to longest ago.
+        if (speechCache.size > CACHE_LIMIT) {
+          speechCache.delete(speechCache.keys().next().value!);
+        }
+
+        return URL.createObjectURL(blob);
       };
+
+      const paused = pausedRef.current;
+      const resume =
+        paused && paused.index === index && paused.content === content
+          ? paused
+          : null;
 
       try {
         const chunks = toChunks(toSpoken(content));
-        let nextUrl = await fetchAudioUrl(chunks[0]);
+        const startChunk =
+          resume && resume.chunk < chunks.length ? resume.chunk : 0;
+        let nextUrl = await fetchAudioUrl(chunks[startChunk]);
 
-        for (let i = 0; i < chunks.length; i++) {
+        for (let i = startChunk; i < chunks.length; i++) {
           if (!isCurrent()) {
             URL.revokeObjectURL(nextUrl);
 
@@ -156,10 +247,26 @@ export function useReadAloud(): ReadAloud {
           const pending =
             i + 1 < chunks.length ? fetchAudioUrl(chunks[i + 1]) : null;
 
-          const audio = new Audio(nextUrl);
+          // The prefetch is not awaited until the current chunk has finished
+          // playing, so a rejection would sit unhandled for minutes and the
+          // dev overlay reports it as a crash. Marked handled here; the await
+          // below still surfaces the failure.
+          pending?.catch(() => {});
 
+          chunkRef.current = i;
+          audio.src = nextUrl;
           urlRef.current = nextUrl;
-          audioRef.current = audio;
+
+          // A seek before the metadata is in is dropped by Safari, so the
+          // resumed position waits for it. The blob is local; this is
+          // milliseconds.
+          if (resume && i === startChunk && resume.time > 0) {
+            await new Promise<void>((ready) => {
+              audio.onloadedmetadata = () => ready();
+            });
+
+            audio.currentTime = resume.time;
+          }
 
           const finished = untilFinished(audio);
 
@@ -168,13 +275,30 @@ export function useReadAloud(): ReadAloud {
           setSpeakingIndex(index);
           await finished;
 
+          // Already revoked if `stop` got here first; revoking twice is a
+          // harmless no-op, and skipping this leaks megabytes of audio per
+          // chunk for the life of the page.
+          URL.revokeObjectURL(nextUrl);
+
           if (pending) nextUrl = await pending;
         }
 
-        if (isCurrent()) stop();
-      } catch {
         if (isCurrent()) {
-          setError('could not read that out.');
+          // Heard to the end: the next press should start over, not resume
+          // at wherever the last pause happened to be.
+          if (pausedRef.current?.index === index) pausedRef.current = null;
+
+          stop();
+        }
+      } catch (thrown) {
+        if (isCurrent()) {
+          console.error('read aloud failed:', thrown);
+
+          setError(
+            thrown instanceof Error && thrown.message
+              ? `could not read that out: ${thrown.message}`
+              : 'could not read that out.',
+          );
           setLoadingIndex(null);
           stop();
         }

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AudioLines,
   KeyRound,
   PanelLeft,
   PanelRight,
@@ -34,6 +35,7 @@ import ProjectPicker from './ProjectPicker';
 import ProjectSettings from './ProjectSettings';
 import InstructionsModal from './InstructionsModal';
 import ThinkingSelect from './ThinkingSelect';
+import VoiceModal from './VoiceModal';
 import { useMediaQuery } from '../../../hooks/useMediaQuery';
 import { useRetainedValue } from '../../../hooks/useRetainedValue';
 import { useMeasuredHeight } from '../hooks/useMeasuredHeight';
@@ -129,6 +131,8 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
   // As with the project editor, the key that hands the form a clean draft each
   // time it is opened, since it outlives its own closing animation.
   const [instructionsVisit, setInstructionsVisit] = useState(0);
+  const [isVoiceOpen, setIsVoiceOpen] = useState(false);
+  const [voiceVisit, setVoiceVisit] = useState(0);
   // Bumped on every open, as the key that gives the editor a clean form. It has
   // to stay mounted after it closes to animate out, so a fresh mount can no
   // longer be had by unmounting it.
@@ -686,6 +690,11 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     setIsInstructionsOpen(true);
   }
 
+  function openVoice() {
+    setVoiceVisit((visit) => visit + 1);
+    setIsVoiceOpen(true);
+  }
+
   function saveInstructions(updated: string) {
     setCustomInstructions(updated);
     localStorage.setItem('instructions', updated);
@@ -804,6 +813,15 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
           </button>
 
           <button
+            onClick={openVoice}
+            className={`${iconButton} hidden sm:flex`}
+            title="Read aloud voice"
+            aria-label="Read aloud voice"
+          >
+            <AudioLines className="h-5 w-5" />
+          </button>
+
+          <button
             onClick={openKeyModal}
             className={`${iconButton} hidden sm:flex`}
             title="Manage key"
@@ -913,6 +931,14 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
 
                 <button
                   className="flex min-h-11 items-center gap-3 rounded-md px-3 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+                  onClick={openVoice}
+                >
+                  <AudioLines className="h-5 w-5 shrink-0" />
+                  voice
+                </button>
+
+                <button
+                  className="flex min-h-11 items-center gap-3 rounded-md px-3 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
                   onClick={openKeyModal}
                 >
                   <KeyRound className="h-5 w-5 shrink-0" />
@@ -968,6 +994,12 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
         instructions={customInstructions}
         onSave={saveInstructions}
         onClose={() => setIsInstructionsOpen(false)}
+      />
+
+      <VoiceModal
+        key={`voice-${voiceVisit}`}
+        isOpen={isVoiceOpen}
+        onClose={() => setIsVoiceOpen(false)}
       />
 
       <ProjectSettings

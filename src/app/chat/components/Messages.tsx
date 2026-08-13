@@ -15,6 +15,7 @@ import {
   ArrowDown,
   Check,
   Copy,
+  Pause,
   Pencil,
   Pin,
   PinOff,
@@ -22,7 +23,6 @@ import {
   Square,
   TriangleAlert,
   Volume2,
-  VolumeX,
 } from 'lucide-react';
 import useAiStream from '../hooks/useAiStream';
 import { useReadAloud } from '../hooks/useReadAloud';
@@ -313,10 +313,10 @@ export default function Messages({
             className={`${actionButton} ${readAloud.speakingIndex === index ? 'text-sky-500' : revealOnHover}`}
             onClick={() => readAloud.toggle(index, message.content)}
             title={
-              readAloud.speakingIndex === index ? 'Stop reading' : 'Read aloud'
+              readAloud.speakingIndex === index ? 'Pause reading' : 'Read aloud'
             }
             aria-label={
-              readAloud.speakingIndex === index ? 'Stop reading' : 'Read aloud'
+              readAloud.speakingIndex === index ? 'Pause reading' : 'Read aloud'
             }
           >
             {readAloud.loadingIndex === index ? (
@@ -324,7 +324,7 @@ export default function Messages({
                 <Spinner />
               </div>
             ) : readAloud.speakingIndex === index ? (
-              <VolumeX className="h-4 w-4" />
+              <Pause className="h-4 w-4" />
             ) : (
               <Volume2 className="h-4 w-4" />
             )}
