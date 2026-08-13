@@ -1,15 +1,38 @@
-export type ThinkingLevel = 'low' | 'medium' | 'high';
+import { isCurrentGeneration } from './models';
 
-// The api also takes `none`, `minimal`, `xhigh` and `max`, but which of those a
-// given model accepts varies by family and generation, and an unsupported one
-// is a 400 rather than a downgrade. These three are the levels every reasoning
-// model has taken since the o-series introduced the parameter.
-export const THINKING_LEVELS: ThinkingLevel[] = ['low', 'medium', 'high'];
+export type ThinkingLevel =
+  | 'none'
+  | 'low'
+  | 'medium'
+  | 'high'
+  | 'xhigh'
+  | 'max';
 
+// Every level the current generation takes, from reasoning switched off
+// outright to as much of it as the model will do.
+export const THINKING_LEVELS: ThinkingLevel[] = [
+  'none',
+  'low',
+  'medium',
+  'high',
+  'xhigh',
+  'max',
+];
+
+// What an older model is offered instead. Which levels a given family accepts
+// varies by generation and an unsupported one is a 400 rather than a
+// downgrade, so anything outside the current generation gets the three that
+// every reasoning model has taken since the o-series introduced the parameter.
+const ESTABLISHED_LEVELS: ThinkingLevel[] = ['low', 'medium', 'high'];
+
+// The api's own default, and the level to fall back to when a model cannot
+// take the one that was chosen.
 export const DEFAULT_THINKING_LEVEL: ThinkingLevel = 'medium';
 
 // Inferred from the id, because the models endpoint reports no capabilities.
 export function supportsThinking(model: string): boolean {
+  if (isCurrentGeneration(model)) return true;
+
   // The non-reasoning sibling of the gpt-5 line.
   if (model.includes('chat-latest')) return false;
 
@@ -21,6 +44,22 @@ export function supportsThinking(model: string): boolean {
   // gpt-5 and anything numbered above it. `gpt-4o` is not matched, and neither
   // is a hypothetical `gpt-4.5`.
   return /^gpt-([5-9]|\d\d)/.test(model);
+}
+
+export function thinkingLevelsFor(model: string): ThinkingLevel[] {
+  return isCurrentGeneration(model) ? THINKING_LEVELS : ESTABLISHED_LEVELS;
+}
+
+// A level chosen for one model and still selected under another that cannot
+// take it. Reached through the model pinned into the list when a saved choice
+// is no longer offered, and through the fallback list behind it.
+export function thinkingLevelFor(
+  model: string,
+  level: ThinkingLevel,
+): ThinkingLevel {
+  return thinkingLevelsFor(model).includes(level)
+    ? level
+    : DEFAULT_THINKING_LEVEL;
 }
 
 export function parseThinkingLevel(value: string | null): ThinkingLevel | null {

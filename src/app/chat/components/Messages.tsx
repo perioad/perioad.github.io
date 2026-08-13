@@ -81,6 +81,7 @@ export default function Messages({
   addNewMessage,
   editMessage,
   dropMessagesFrom,
+  recordUsage,
   model,
   thinkingLevel,
   togglePin,
@@ -94,6 +95,7 @@ export default function Messages({
   ) => void;
   editMessage: (index: number, content: string) => Promise<void>;
   dropMessagesFrom: (index: number) => Promise<void>;
+  recordUsage: (tokens: number) => Promise<void>;
   model: ResponsesModel;
   thinkingLevel: ThinkingLevel;
   togglePin: (index: number) => void;
@@ -136,6 +138,7 @@ export default function Messages({
       model,
       thinkingLevel,
       instructions,
+      recordUsage,
     );
 
   const readAloud = useReadAloud();

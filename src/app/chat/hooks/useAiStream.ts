@@ -2,7 +2,12 @@ import OpenAI from 'openai';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Citation, Message } from '../models/chat';
 import { ResponsesModel } from 'openai/resources/index.mjs';
-import { supportsThinking, ThinkingLevel } from '../utils/thinking';
+import { ResponseUsage } from 'openai/resources/responses/responses.mjs';
+import {
+  supportsThinking,
+  ThinkingLevel,
+  thinkingLevelFor,
+} from '../utils/thinking';
 import { toInput } from '../utils/attachments';
 import {
   describeSearchAction,
@@ -43,6 +48,18 @@ function describeError(error: unknown): string {
   return 'could not reach openai. check your connection and try again.';
 }
 
+// What the next question will carry, which is not the same as what this one
+// cost. The reply is appended to the conversation and goes up with it, but the
+// thinking behind the reply is not kept and is not sent again, so it is
+// counted here and taken back off.
+function carriedForward(usage: ResponseUsage | undefined): number | null {
+  if (!usage) return null;
+
+  const reasoning = usage.output_tokens_details?.reasoning_tokens ?? 0;
+
+  return usage.input_tokens + usage.output_tokens - reasoning;
+}
+
 const useAiStream = (
   shouldRequest: boolean,
   messages: Message[],
@@ -50,6 +67,7 @@ const useAiStream = (
   model: ResponsesModel,
   thinkingLevel: ThinkingLevel,
   instructions: string | null,
+  onUsage: (tokens: number) => Promise<void>,
 ): AiStream => {
   const askedForTurnRef = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -132,8 +150,10 @@ const useAiStream = (
             store: false,
             // Checked here as well as in the header, so that a model without
             // reasoning never carries the parameter and the 400 it would cause.
+            // The level is checked against the model for the same reason: not
+            // every one of them takes all six.
             ...(supportsThinking(model) && {
-              reasoning: { effort: thinkingLevel },
+              reasoning: { effort: thinkingLevelFor(model, thinkingLevel) },
             }),
           },
           { signal: controller.signal },
@@ -171,6 +191,17 @@ const useAiStream = (
             }
           }
 
+          // Arrives once, after the last of the text, and is the only honest
+          // count of the conversation: everything else would be this app
+          // guessing at a tokeniser it does not have.
+          if (event.type === 'response.completed') {
+            const tokens = carriedForward(event.response.usage);
+
+            if (tokens !== null) {
+              await onUsage(tokens);
+            }
+          }
+
           if (event.type === 'response.output_text.delta') {
             // The answer arriving is what ends the searching, rather than the
             // event that completes a call: a model that is going to search
@@ -204,6 +235,7 @@ const useAiStream = (
     model,
     thinkingLevel,
     instructions,
+    onUsage,
     attempt,
   ]);
 

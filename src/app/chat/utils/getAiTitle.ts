@@ -1,11 +1,5 @@
 import OpenAI from 'openai';
-
-// The cheapest model on offer, and naming a chat asks very little of it.
-// `minimal` is as far down as this generation goes: `none`, which switches
-// reasoning off outright, arrived with gpt-5.1. Worth setting either way, since
-// the default is `medium` and the model would otherwise think at length before
-// answering with five words.
-const TITLE_MODEL = 'gpt-5-nano';
+import { TITLE_MODEL } from './models';
 
 // The word limit below is a request rather than a rule, and titles come back
 // wrapped in quotes often enough to be worth undoing.
@@ -34,7 +28,10 @@ export async function getAiTitle(content: string) {
 
   const response = await openai.responses.create({
     model: TITLE_MODEL,
-    reasoning: { effort: 'minimal' },
+    // Off rather than merely turned down. The default is `medium`, which would
+    // have the model think at length before answering with five words, and
+    // thinking is billed as output whether or not any of it is shown.
+    reasoning: { effort: 'none' },
     input: `Create a chat title in maximum 5 words based on this text without any symbols and without articles: ${content}`,
     // The chat it is naming is never sent for storage either.
     store: false,

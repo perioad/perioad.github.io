@@ -9,6 +9,15 @@ export type HistoryRecord = {
   // ids, so moving one is a single write and nothing can disagree about where
   // it lives.
   projectId?: number;
+  // The model that last answered here, so reopening a conversation picks up on
+  // the one it was held with. Absent on every chat saved before this was
+  // recorded, which is why nothing may depend on it being there.
+  model?: string;
+  // Roughly what the next question will carry, counted by the api rather than
+  // guessed here: what the last one carried, plus the words it answered with.
+  // Absent until a reply has completed, so a chat that has never been answered
+  // shows nothing rather than zero.
+  usedTokens?: number;
 };
 
 export interface Prompt {

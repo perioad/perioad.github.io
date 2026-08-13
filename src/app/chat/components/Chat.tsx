@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   KeyRound,
   PanelLeft,
@@ -42,14 +42,16 @@ import {
   supportsThinking,
   ThinkingLevel,
 } from '../utils/thinking';
+import { contextBudgetFor, DEFAULT_MODEL } from '../utils/models';
+import ContextDonut from './ContextDonut';
 
 // Tailwind's `sm` starts at 40rem, so this is everything below it.
 const MOBILE_QUERY = '(max-width: 39.9375rem)';
 
 function getModelFromLocalStorage(): ResponsesModel {
-  if (typeof window === 'undefined') return 'gpt-4o';
+  if (typeof window === 'undefined') return DEFAULT_MODEL;
 
-  return localStorage.getItem('model') ?? 'gpt-4o';
+  return localStorage.getItem('model') ?? DEFAULT_MODEL;
 }
 
 function getThinkingLevelFromLocalStorage(): ThinkingLevel {
@@ -179,16 +181,20 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
   useEffect(() => {
     const fetchHistory = async () => {
       const savedHistory = await getHistoryDB();
-
-      setHistory(savedHistory);
       // The chat left open last time, unless it has since been removed or was
       // an empty one that never got as far as a record. The newest is the
       // answer then, as it was before any of this was remembered.
-      setCurrentChatId((openLastTime) =>
-        savedHistory.some(({ id }) => id === openLastTime)
-          ? openLastTime
-          : (savedHistory.at(0)?.id ?? 1),
-      );
+      const openLastTime = getSavedChatId();
+      const current =
+        savedHistory.find(({ id }) => id === openLastTime) ??
+        savedHistory.at(0);
+
+      setHistory(savedHistory);
+      setCurrentChatId(current?.id ?? 1);
+
+      if (current?.model) {
+        setModel(current.model);
+      }
     };
 
     fetchHistory();
@@ -228,6 +234,14 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
       id: currentChatId,
       title: saved?.title ?? 'New chat',
       messages: updatedMessages,
+      // Written on every save rather than only the first, so it is the model
+      // the chat was last held with and not the one it opened on.
+      model,
+      // Carried over because the record is rebuilt here rather than amended,
+      // and the count belongs to the reply that finished, not to the chunk
+      // being saved. Left out it would be wiped on every keystroke of the
+      // answer and only come back when the next one ended.
+      ...(saved?.usedTokens ? { usedTokens: saved.usedTokens } : {}),
       ...(projectId ? { projectId } : {}),
     });
 
@@ -252,6 +266,24 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
 
     setHistory(await getHistoryDB());
   };
+
+  // Reported by the api when a reply finishes, so it lands after the last chunk
+  // has been saved and amends the record rather than rewriting it.
+  const recordUsage = useCallback(
+    async (usedTokens: number) => {
+      const tx = await getHistoryTransaction();
+      const saved = await tx.store.get(currentChatId);
+
+      if (saved) {
+        await tx.store.put({ ...saved, usedTokens });
+      }
+
+      await tx.done;
+
+      setHistory(await getHistoryDB());
+    },
+    [currentChatId],
+  );
 
   // Named after the message is saved, not before it. Waiting on the title used
   // to hold up the first message of every chat behind a whole round trip.
@@ -408,10 +440,20 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
   };
 
   const selectChat = (id: number) => {
+    const chat = history.find((saved) => saved.id === id);
+
     setCurrentChatId(id);
     // The chat being opened answers for itself where it is filed, and a project
     // left over from an abandoned new chat is not that answer.
     setPendingProjectId(null);
+
+    // Carrying on where it left off, rather than in whatever was last picked
+    // elsewhere. A chat saved before this was recorded has nothing to say
+    // about it and keeps the current choice.
+    if (chat?.model) {
+      setModel(chat.model);
+    }
+
     closeDrawers();
 
     // Focusing here would open the keyboard over the conversation the user just
@@ -564,10 +606,6 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     localStorage.setItem('instructions', updated);
   }
 
-  function handleSelectModel(model: ResponsesModel) {
-    setModel(model);
-  }
-
   function handleSelectThinkingLevel(level: ThinkingLevel) {
     setThinkingLevel(level);
     localStorage.setItem('thinking', level);
@@ -648,14 +686,25 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
         </div>
 
         <div className="flex min-w-0 items-center justify-center gap-1">
-          <ModelSelect model={model} setModel={handleSelectModel} />
+          {/* The state setter itself, rather than a wrapper made afresh on
+              every render: the select holds on to it and would refetch the
+              model list each time a new one arrived. */}
+          <ModelSelect model={model} setModel={setModel} />
 
           {supportsThinking(model) && (
             <ThinkingSelect
+              model={model}
               level={thinkingLevel}
               setLevel={handleSelectThinkingLevel}
             />
           )}
+
+          {/* Beside what it depends on: the budget it is measured against
+              follows the selected model, so switching models moves the ring. */}
+          <ContextDonut
+            used={currentHistory?.usedTokens ?? 0}
+            budget={contextBudgetFor(model)}
+          />
         </div>
 
         <div className="flex justify-end">
@@ -717,6 +766,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
             addNewMessage={addNewMessage}
             editMessage={editMessage}
             dropMessagesFrom={dropMessagesFrom}
+            recordUsage={recordUsage}
             model={model}
             thinkingLevel={thinkingLevel}
             togglePin={togglePin}
