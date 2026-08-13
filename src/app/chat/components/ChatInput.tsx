@@ -71,6 +71,14 @@ const LEVEL_GAIN = 2.2;
 // Never all the way down, so four bars still read as four bars in a silence.
 const MIN_SCALE = 0.15;
 
+// Bare icons on the composer's own background rather than a surface each. Three
+// filled squares in a row read as three blocks competing with the box they sit
+// beside; the same three on one background read as marks on it. The hover is a
+// shade darker than the header's for that reason: this sits on a filled panel
+// rather than on the page.
+const composerButton =
+  'flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-slate-200 dark:hover:bg-slate-700';
+
 // Bars that follow the voice as it is spoken: each one is a band of the
 // spectrum, and its height is how much of the sound is in that band right now.
 // What the button has to say while recording is that the microphone is
@@ -209,10 +217,12 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
     recording: 'Stop recording',
     transcribing: 'Transcribing',
   }[recording.status];
+  // Recording is the one state that has to hold its own surface, since the bars
+  // moving inside a shape say listening in a way that bars on the panel do not.
   const micStyles =
     recording.status === 'recording'
-      ? 'bg-slate-100 dark:bg-slate-800'
-      : 'bg-slate-100 aria-disabled:opacity-40 dark:bg-slate-800';
+      ? 'bg-slate-200 dark:bg-slate-700'
+      : 'aria-disabled:opacity-40';
 
   const promptTrimmed = prompt.trim();
   const promptTrimmedForAnimation = promptForAnimation.trim();
@@ -221,11 +231,11 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
   // send on its own.
   const canSend = !isEmptyPrompt || attachments.length > 0;
 
-  // A line of text and the padding around it, which is also the smallest a
-  // target should be under a thumb. Matches the square buttons beside it, in the
-  // same unit so that the row stays aligned when the root font size is turned
-  // up.
-  const minHeight = '2.75rem';
+  // One line of text and the padding around it, and no longer a thumb target in
+  // its own right: the buttons moved under the box, so this no longer has to
+  // stand as tall as they are. Kept in the same unit as their heights so the
+  // composer holds together when the root font size is turned up.
+  const minHeight = '2.25rem';
 
   function handleTextAreaChange(event: ChangeEvent<HTMLTextAreaElement>) {
     const value: string = event.target.value;
@@ -340,7 +350,7 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
     // them rather than added to it, so the bar sits where it did and only looks
     // even. The floor under the bottom is the home indicator's, not a choice.
     <div
-      className={`mx-auto w-full max-w-4xl px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:px-5 sm:pt-3 sm:pb-3 ${isDraggedOver ? 'bg-slate-100/50 dark:bg-slate-800/50' : ''}`}
+      className="mx-auto w-full max-w-4xl px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:px-5 sm:pt-3 sm:pb-3"
       onDragOver={(event) => {
         event.preventDefault();
         setIsDraggedOver(true);
@@ -367,7 +377,24 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
         </div>
       )}
 
-      <div className="relative flex">
+      {/* One panel holding the writing and the controls, with the controls
+          under the text rather than beside it. Three buttons in the row cost
+          nearly half the width of a phone, and width is what a sentence needs;
+          the height they cost here is the cheaper side of the trade. */}
+      {/* Outlined while a file is over the page rather than tinted behind it,
+          since the panel is filled and a tint under a fill cannot be seen. */}
+      <div
+        // Held by the panel rather than by each thing in it, so that the send
+        // button, which is the one with a surface of its own, is inset by its
+        // edge and not by the icon inside it. The box gives that padding back
+        // to the text so the writing still starts where it used to.
+        // Barely there while it is only sitting there, and firmer once it is
+        // being written in, where a sentence sliding past under the words being
+        // typed is the last thing wanted. Never solid at either end: the blur
+        // is what keeps it readable, so the conversation stays visible through
+        // it rather than being shut out by it.
+        className={`rounded-md bg-slate-100/50 px-2 pb-2 backdrop-blur-sm transition-colors focus-within:bg-slate-100/75 dark:bg-slate-800/50 dark:focus-within:bg-slate-800/75 ${isDraggedOver ? 'outline-2 outline-green-700' : ''}`}
+      >
         <input
           ref={fileInputRef}
           className="hidden"
@@ -382,68 +409,85 @@ export default function ChatInput({ addNewMessage, ref }: ChatInputProps) {
           }}
         />
 
-        <textarea
-          ref={textareaRef}
-          className="h-auto w-full resize-none rounded-md bg-slate-100 px-3 py-2.5 text-base leading-6 sm:text-sm dark:bg-slate-800"
-          style={{ minHeight }}
-          rows={1}
-          placeholder="Write your prompt here.."
-          value={prompt}
-          onChange={handleTextAreaChange}
-          onKeyDown={handleKeyDown}
-          onPaste={handlePaste}
-          onScroll={handleTextareaScroll}
-        ></textarea>
+        {/* Around the box alone, so the copy that flies away on send is placed
+            against the text it is a copy of and not against the toolbar. */}
+        <div className="relative">
+          <textarea
+            ref={textareaRef}
+            className="block h-auto w-full resize-none bg-transparent px-1 pt-2 pb-1 text-base leading-6 outline-none sm:text-sm"
+            style={{ minHeight }}
+            rows={1}
+            placeholder="Write your prompt here.."
+            value={prompt}
+            onChange={handleTextAreaChange}
+            onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
+            onScroll={handleTextareaScroll}
+          ></textarea>
 
-        <div
-          ref={animatedTextRef}
-          className={`pointer-events-none absolute bottom-0 left-0 overflow-y-auto px-3 py-2.5 ${
-            isAnimating ? 'visible animate-fly-up' : 'invisible'
-          }`}
-        >
-          <pre className="wrap-break-word whitespace-pre-wrap">
-            {promptTrimmedForAnimation}
-          </pre>
+          <div
+            ref={animatedTextRef}
+            className={`pointer-events-none absolute bottom-0 left-0 overflow-y-auto px-1 pt-2 pb-1 ${
+              isAnimating ? 'visible animate-fly-up' : 'invisible'
+            }`}
+          >
+            <pre className="wrap-break-word whitespace-pre-wrap">
+              {promptTrimmedForAnimation}
+            </pre>
+          </div>
         </div>
 
-        <button
-          className="ml-2 flex h-11 w-11 shrink-0 items-center justify-center self-end rounded-md bg-slate-100 transition-colors sm:ml-3 dark:bg-slate-800"
-          title="Attach a file"
-          aria-label="Attach a file"
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <Paperclip className="h-5 w-5" />
-        </button>
-
-        {recording.isSupported && (
+        <div className="flex items-center gap-1">
           <button
-            className={`${micStyles} ml-2 flex h-11 w-11 shrink-0 items-center justify-center self-end rounded-md transition-colors sm:ml-3`}
-            aria-disabled={recording.status === 'transcribing'}
-            title={micLabel}
-            aria-label={micLabel}
-            onClick={recording.toggleRecording}
+            className={composerButton}
+            title="Attach a file"
+            aria-label="Attach a file"
+            onClick={() => fileInputRef.current?.click()}
           >
-            {recording.status === 'transcribing' && (
-              <div className="h-5 w-5">
-                <Spinner />
-              </div>
-            )}
-            {recording.status === 'recording' && (
-              <SoundBars analyserRef={recording.analyserRef} />
-            )}
-            {recording.status === 'idle' && <Mic className="h-5 w-5" />}
+            <Paperclip className="h-5 w-5" />
           </button>
-        )}
 
-        <button
-          className="ml-2 flex h-11 w-11 shrink-0 items-center justify-center self-end rounded-md bg-slate-100 transition-all aria-disabled:opacity-40 sm:ml-3 dark:bg-slate-800"
-          aria-disabled={!canSend}
-          title="Send"
-          aria-label="Send"
-          onClick={() => handleSubmit(promptTrimmed)}
-        >
-          <ArrowUp className="h-5 w-5" />
-        </button>
+          {/* What is done to the message on the left, what is done with it on
+              the right, and the gap between them saying which is which. */}
+          <div className="ml-auto flex items-center gap-1">
+            {recording.isSupported && (
+              <button
+                className={`${composerButton} ${micStyles}`}
+                aria-disabled={recording.status === 'transcribing'}
+                title={micLabel}
+                aria-label={micLabel}
+                onClick={recording.toggleRecording}
+              >
+                {recording.status === 'transcribing' && (
+                  <div className="h-5 w-5">
+                    <Spinner />
+                  </div>
+                )}
+                {recording.status === 'recording' && (
+                  <SoundBars analyserRef={recording.analyserRef} />
+                )}
+                {recording.status === 'idle' && <Mic className="h-5 w-5" />}
+              </button>
+            )}
+
+            {/* Filled only when there is something to send, which is the one
+                place in the composer worth colouring: it makes the ready state
+                visible without a word, and leaves the row plain until then. */}
+            <button
+              className={`${composerButton} ${
+                canSend
+                  ? 'bg-green-700 text-white hover:bg-green-800'
+                  : 'opacity-40'
+              }`}
+              aria-disabled={!canSend}
+              title="Send"
+              aria-label="Send"
+              onClick={() => handleSubmit(promptTrimmed)}
+            >
+              <ArrowUp className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
