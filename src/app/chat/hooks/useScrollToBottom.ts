@@ -23,15 +23,18 @@ export function useScrollToBottom() {
     });
   }, []);
 
-  // Ignores the "user scrolled up" latch, because pressing the jump button is
-  // the user asking to follow along again.
-  const scrollToBottomNow = useCallback(() => {
-    isUserScrolledTop.current = false;
+  // Ignores the "user scrolled up" latch, because both callers are asking to
+  // be at the bottom regardless: the jump button, and a chat being opened.
+  const scrollToBottomNow = useCallback(
+    (behavior: ScrollBehavior = 'smooth') => {
+      isUserScrolledTop.current = false;
 
-    const container = containerRef.current;
+      const container = containerRef.current;
 
-    container?.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
-  }, []);
+      container?.scrollTo({ top: container.scrollHeight, behavior });
+    },
+    [],
+  );
 
   useEffect(() => {
     const container = containerRef.current;

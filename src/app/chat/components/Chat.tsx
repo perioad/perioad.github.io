@@ -848,6 +848,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
 
         <div className="relative flex h-full grow flex-col overflow-hidden">
           <Messages
+            chatId={currentChatId}
             messages={messages}
             addNewMessage={addNewMessage}
             editMessage={editMessage}

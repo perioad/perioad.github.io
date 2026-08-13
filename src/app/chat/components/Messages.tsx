@@ -2,6 +2,7 @@ import {
   Fragment,
   MouseEvent,
   useCallback,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -77,6 +78,7 @@ function renderMarkdown(content: string, citations?: Citation[]): string {
 }
 
 export default function Messages({
+  chatId,
   messages,
   addNewMessage,
   editMessage,
@@ -89,6 +91,7 @@ export default function Messages({
   togglePin,
   instructions,
 }: {
+  chatId: string;
   messages: Message[];
   addNewMessage: (
     content: string,
@@ -113,6 +116,19 @@ export default function Messages({
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [draft, setDraft] = useState('');
   const draftRef = useRef<HTMLTextAreaElement>(null);
+  const openedChatId = useRef<string | null>(null);
+
+  // A chat opens at its end, where it left off. Cannot key on the chat id
+  // alone: on a fresh page load the messages arrive from IndexedDB after the
+  // id does, so the scroll waits for them. Once per chat, so a later save does
+  // not yank a reader who has scrolled up; instant rather than smooth, since
+  // nothing was on screen yet to animate past.
+  useLayoutEffect(() => {
+    if (messages.length === 0 || openedChatId.current === chatId) return;
+
+    openedChatId.current = chatId;
+    scrollToBottomNow('instant');
+  }, [chatId, messages, scrollToBottomNow]);
 
   // Derived rather than stored: nothing to reconcile when a message is added or
   // a pin is dropped, and the order follows the conversation for free.
@@ -518,7 +534,7 @@ export default function Messages({
         !isAtBottom && (
           <button
             className={`${floatingButton} w-11`}
-            onClick={scrollToBottomNow}
+            onClick={() => scrollToBottomNow()}
             title="Scroll to latest"
             aria-label="Scroll to latest"
           >
