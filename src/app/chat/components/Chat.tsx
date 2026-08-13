@@ -145,6 +145,15 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
   const promptBeingRemoved = useRetainedValue(promptPendingRemoval);
   const projectBeingRemoved = useRetainedValue(projectPendingRemoval);
 
+  // A reply is sent for because it was asked for, not because the conversation
+  // happens to end on a question. Kept in memory alone, so that a page load
+  // starts owing nothing: a question left hanging by a stop, a reload or a
+  // closed tab stays hanging until it is asked again, rather than firing off a
+  // request nobody is waiting for the moment the chat is opened.
+  const [replyRequestedFor, setReplyRequestedFor] = useState<number | null>(
+    null,
+  );
+
   const currentHistory = useMemo(
     () => history.find(({ id }) => id === currentChatId),
     [history, currentChatId],
@@ -323,6 +332,10 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     const isFirstMessage = messages.length === 0;
     const chatId = currentChatId;
 
+    if (role === 'user') {
+      setReplyRequestedFor(chatId);
+    }
+
     await saveMessages([...messages, newMessage]);
 
     // A picture on its own is a whole question, and leaves nothing to name the
@@ -341,6 +354,8 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
   // neither is anything said after. Both go, and the edited question is asked
   // again as the last thing in the conversation.
   const editMessage = async (index: number, content: string) => {
+    setReplyRequestedFor(currentChatId);
+
     await saveMessages(
       messages
         .slice(0, index + 1)
@@ -349,6 +364,8 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
   };
 
   const dropMessagesFrom = async (index: number) => {
+    setReplyRequestedFor(currentChatId);
+
     await saveMessages(messages.slice(0, index));
   };
 

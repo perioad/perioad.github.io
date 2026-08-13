@@ -82,6 +82,8 @@ export default function Messages({
   editMessage,
   dropMessagesFrom,
   recordUsage,
+  isReplyRequested,
+  requestReply,
   model,
   thinkingLevel,
   togglePin,
@@ -96,6 +98,8 @@ export default function Messages({
   editMessage: (index: number, content: string) => Promise<void>;
   dropMessagesFrom: (index: number) => Promise<void>;
   recordUsage: (tokens: number) => Promise<void>;
+  isReplyRequested: boolean;
+  requestReply: () => void;
   model: ResponsesModel;
   thinkingLevel: ThinkingLevel;
   togglePin: (index: number) => void;
@@ -129,10 +133,14 @@ export default function Messages({
   );
 
   const isAwaitingReply = messages.at(-1)?.role === 'user';
+  // The conversation ends on a question nobody asked for an answer to during
+  // this visit: it was stopped, or the tab was closed while it was being
+  // written. Shown as something to pick up rather than answered unprompted.
+  const isLeftHanging = isAwaitingReply && !isReplyRequested;
 
   const { searchStatus, isStreaming, isStopped, error, stop, restart } =
     useAiStream(
-      isAwaitingReply,
+      isAwaitingReply && isReplyRequested,
       messages,
       addAssistantContent,
       model,
@@ -213,6 +221,8 @@ export default function Messages({
   function retry() {
     const last = messages.length - 1;
 
+    requestReply();
+
     if (messages[last]?.role === 'assistant') {
       regenerate(last);
 
@@ -231,7 +241,13 @@ export default function Messages({
       ? { message: readAloud.error, isFault: true, canRetry: false }
       : isStopped && isAwaitingReply
         ? { message: 'stopped.', isFault: false, canRetry: true }
-        : null;
+        : isLeftHanging
+          ? {
+              message: 'this question was left unanswered.',
+              isFault: false,
+              canRetry: true,
+            }
+          : null;
 
   const messageActions = (message: Message, index: number) => (
     <div className="mt-1 flex">
@@ -471,8 +487,13 @@ export default function Messages({
               </span>
 
               {notice.canRetry && (
-                <button className={actionButton} onClick={retry}>
-                  try again
+                <button
+                  className={actionButton}
+                  onClick={retry}
+                  title="Try again"
+                  aria-label="Try again"
+                >
+                  <RotateCcw className="h-4 w-4" />
                 </button>
               )}
             </div>
