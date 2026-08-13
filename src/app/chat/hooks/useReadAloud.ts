@@ -4,6 +4,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 const SPEECH_MODEL = 'gpt-4o-mini-tts';
 const VOICE = 'alloy';
 
+// The speech endpoint rejects any input over 4096 characters, so a long reply
+// has to be sent as several requests and played back to back.
+const MAX_INPUT_LENGTH = 4096;
+
 // Markdown is written to be looked at. Read out as it is, a bulleted list of
 // emphasised terms becomes a recital of asterisks and backticks, so the marks
 // come off and the words they were around stay.
@@ -21,6 +25,47 @@ function toSpoken(content: string): string {
     .trim();
 }
 
+// Cut at sentence ends so a chunk boundary lands between thoughts rather than
+// mid-word, where the seam between two audio files would be audible.
+function toChunks(text: string): string[] {
+  const sentences = text.match(/[^.!?\n]+[.!?\n]*/g) ?? [text];
+  const chunks: string[] = [];
+  let current = '';
+
+  for (const sentence of sentences) {
+    if (current.length + sentence.length <= MAX_INPUT_LENGTH) {
+      current += sentence;
+      continue;
+    }
+
+    if (current) chunks.push(current);
+
+    // A single sentence past the limit has no good seam, so it gets a hard one.
+    let rest = sentence;
+    while (rest.length > MAX_INPUT_LENGTH) {
+      chunks.push(rest.slice(0, MAX_INPUT_LENGTH));
+      rest = rest.slice(MAX_INPUT_LENGTH);
+    }
+
+    current = rest;
+  }
+
+  if (current) chunks.push(current);
+
+  return chunks.filter((chunk) => chunk.trim());
+}
+
+// Resolves when this piece of audio is done with, for any reason: played to
+// the end, failed, or paused by `stop`. Pausing has to count, otherwise a
+// playback loop awaiting this would hang forever after the user hits stop.
+function untilFinished(audio: HTMLAudioElement): Promise<void> {
+  return new Promise((resolve) => {
+    audio.onended = () => resolve();
+    audio.onpause = () => resolve();
+    audio.onerror = () => resolve();
+  });
+}
+
 export type ReadAloud = {
   speakingIndex: number | null;
   loadingIndex: number | null;
@@ -33,11 +78,16 @@ export type ReadAloud = {
 export function useReadAloud(): ReadAloud {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const urlRef = useRef<string | null>(null);
+  // Playback spans many awaits, and `stop` can land inside any of them. Each
+  // toggle takes the next number, and stale async work checks it before
+  // touching state, so a stopped reading cannot resurrect itself.
+  const sessionRef = useRef(0);
   const [speakingIndex, setSpeakingIndex] = useState<number | null>(null);
   const [loadingIndex, setLoadingIndex] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const stop = useCallback(() => {
+    sessionRef.current += 1;
     audioRef.current?.pause();
     audioRef.current = null;
 
@@ -75,29 +125,59 @@ export function useReadAloud(): ReadAloud {
       setError(null);
       setLoadingIndex(index);
 
-      try {
-        const openai = new OpenAI({ apiKey, dangerouslyAllowBrowser: true });
+      const session = sessionRef.current;
+      const isCurrent = () => sessionRef.current === session;
+
+      const openai = new OpenAI({ apiKey, dangerouslyAllowBrowser: true });
+      const fetchAudioUrl = async (input: string) => {
         const speech = await openai.audio.speech.create({
           model: SPEECH_MODEL,
           voice: VOICE,
-          input: toSpoken(content),
+          input,
         });
 
-        const url = URL.createObjectURL(await speech.blob());
-        const audio = new Audio(url);
+        return URL.createObjectURL(await speech.blob());
+      };
 
-        audio.onended = stop;
+      try {
+        const chunks = toChunks(toSpoken(content));
+        let nextUrl = await fetchAudioUrl(chunks[0]);
 
-        urlRef.current = url;
-        audioRef.current = audio;
+        for (let i = 0; i < chunks.length; i++) {
+          if (!isCurrent()) {
+            URL.revokeObjectURL(nextUrl);
 
-        await audio.play();
-        setSpeakingIndex(index);
+            return;
+          }
+
+          // The next chunk is requested while this one plays, so the pause at
+          // each seam is only as long as whatever fetching time the playback
+          // did not cover.
+          const pending =
+            i + 1 < chunks.length ? fetchAudioUrl(chunks[i + 1]) : null;
+
+          const audio = new Audio(nextUrl);
+
+          urlRef.current = nextUrl;
+          audioRef.current = audio;
+
+          const finished = untilFinished(audio);
+
+          await audio.play();
+          setLoadingIndex(null);
+          setSpeakingIndex(index);
+          await finished;
+
+          if (pending) nextUrl = await pending;
+        }
+
+        if (isCurrent()) stop();
       } catch {
-        setError('could not read that out.');
-        stop();
-      } finally {
-        setLoadingIndex(null);
+        if (isCurrent()) {
+          setError('could not read that out.');
+          setLoadingIndex(null);
+          stop();
+        }
       }
     },
     [speakingIndex, loadingIndex, stop],
