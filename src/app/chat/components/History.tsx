@@ -22,6 +22,7 @@ import {
   sidebarRow,
   sidebarRowAction,
   sidebarRowActions,
+  sidebarRowInline,
   sidebarRowLabel,
   sidebarRowSelected,
   sidebarRowTrack,
@@ -226,7 +227,7 @@ export default function History({
 
             return (
               <li key={project.id}>
-                <div className={sidebarRow}>
+                <div className={sidebarRowInline}>
                   <button
                     className="flex min-h-11 grow items-center gap-2 overflow-hidden px-2 text-left sm:min-h-9"
                     onClick={() => toggleProject(project.id, isExpanded)}
@@ -244,25 +245,23 @@ export default function History({
                     </span>
                   </button>
 
-                  <div className={sidebarRowActions}>
-                    <button
-                      className={sidebarRowAction}
-                      title={`New chat in ${project.title}`}
-                      aria-label={`New chat in ${project.title}`}
-                      onClick={() => startProjectChat(project.id)}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </button>
+                  <button
+                    className={sidebarRowAction}
+                    title={`New chat in ${project.title}`}
+                    aria-label={`New chat in ${project.title}`}
+                    onClick={() => startProjectChat(project.id)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
 
-                    <button
-                      className={sidebarRowAction}
-                      title={`Project settings: ${project.title}`}
-                      aria-label={`Project settings: ${project.title}`}
-                      onClick={() => editProject(project)}
-                    >
-                      <Settings2 className="h-4 w-4" />
-                    </button>
-                  </div>
+                  <button
+                    className={sidebarRowAction}
+                    title={`Project settings: ${project.title}`}
+                    aria-label={`Project settings: ${project.title}`}
+                    onClick={() => editProject(project)}
+                  >
+                    <Settings2 className="h-4 w-4" />
+                  </button>
                 </div>
 
                 {isExpanded && (

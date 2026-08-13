@@ -3,12 +3,20 @@
 // arrived at different fills, different hovers, and a row action written out
 // twice by hand.
 
+const row =
+  'group relative flex rounded-md transition-colors hover:bg-slate-100 dark:hover:bg-slate-800';
+
 // The row is the target, so all of it answers the pointer rather than only the
 // label inside it. It stacks in the drawer, where the actions are full size
 // because there is no hover to reveal them and three of them leave a title
 // almost nothing to sit in.
-export const sidebarRow =
-  'group relative flex flex-col items-stretch rounded-md transition-colors hover:bg-slate-100 sm:flex-row sm:items-center dark:hover:bg-slate-800';
+export const sidebarRow = `${row} flex-col items-stretch sm:flex-row sm:items-center`;
+
+// Two actions still leave a title room to sit in at full size, so a row with
+// only that many keeps them beside the name at every width. Stacking them under
+// a project pushed its chats a touch target away from the folder they are
+// filed under.
+export const sidebarRowInline = `${row} flex-row items-center`;
 
 // Pulled up into the padding the two touch targets stack back to back, which
 // is otherwise wide enough to read as a break between the title and the
