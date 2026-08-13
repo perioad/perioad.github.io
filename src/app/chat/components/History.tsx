@@ -5,6 +5,7 @@ import {
   Download,
   FolderInput,
   FolderPlus,
+  HardDriveDownload,
   Pencil,
   Plus,
   Settings2,
@@ -29,15 +30,16 @@ import {
 interface HistoryProps {
   history: HistoryRecord[];
   projects: Project[];
-  selectChat: (id: number) => void;
+  selectChat: (id: string) => void;
   removeChat: (chat: HistoryRecord) => void;
-  renameChat: (id: number, title: string) => Promise<void>;
+  renameChat: (id: string, title: string) => Promise<void>;
   moveChat: (chat: HistoryRecord) => void;
-  currentChatId: number;
+  currentChatId: string;
   createProject: () => void;
   editProject: (project: Project) => void;
-  startProjectChat: (projectId: number) => void;
-  importChat: (file: File) => void;
+  startProjectChat: (projectId: string) => void;
+  importFile: (file: File) => void;
+  exportEverything: () => void;
 }
 
 // Renders the list only. The container is the caller's business, because it is
@@ -53,20 +55,21 @@ export default function History({
   createProject,
   editProject,
   startProjectChat,
-  importChat,
+  importFile,
+  exportEverything,
 }: HistoryProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Renaming happens in the row rather than in a dialog. A dialog would have to
   // close the drawer it was opened from, because the two would otherwise fight
   // over the focus the drawer traps, and losing the list to rename one line in
   // it is a poor trade.
-  const [renamingId, setRenamingId] = useState<number | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   // What the visitor has said about a project, against a default the project
   // works out for itself. Recording only the answers given leaves the default
   // free to change with the conversation, and still lets a click overrule it.
   const [expansionOverrides, setExpansionOverrides] = useState<
-    Record<number, boolean>
+    Record<string, boolean>
   >({});
 
   function startRename(chat: HistoryRecord) {
@@ -105,7 +108,7 @@ export default function History({
     }
   }
 
-  function toggleProject(id: number, isExpanded: boolean) {
+  function toggleProject(id: string, isExpanded: boolean) {
     setExpansionOverrides((overrides) => ({ ...overrides, [id]: !isExpanded }));
   }
 
@@ -113,7 +116,7 @@ export default function History({
   // than hidden, so nothing can be lost by deleting a folder.
   const projectIds = new Set(projects.map(({ id }) => id));
 
-  const chatsInProject = (projectId?: number) =>
+  const chatsInProject = (projectId?: string) =>
     history.filter((chat) => chat.projectId === projectId);
 
   const looseChats = history.filter(
@@ -218,7 +221,7 @@ export default function History({
             // The project holding the current chat opens on its own, so
             // selecting a chat inside one never hides what is being read.
             const isExpanded =
-              expansionOverrides[project.id!] ??
+              expansionOverrides[project.id] ??
               chats.some(({ id }) => id === currentChatId);
 
             return (
@@ -226,7 +229,7 @@ export default function History({
                 <div className={sidebarRow}>
                   <button
                     className="flex min-h-11 grow items-center gap-2 overflow-hidden px-2 text-left sm:min-h-9"
-                    onClick={() => toggleProject(project.id!, isExpanded)}
+                    onClick={() => toggleProject(project.id, isExpanded)}
                     aria-expanded={isExpanded}
                     title={project.title}
                   >
@@ -246,7 +249,7 @@ export default function History({
                       className={sidebarRowAction}
                       title={`New chat in ${project.title}`}
                       aria-label={`New chat in ${project.title}`}
-                      onClick={() => startProjectChat(project.id!)}
+                      onClick={() => startProjectChat(project.id)}
                     >
                       <Plus className="h-4 w-4" />
                     </button>
@@ -290,7 +293,7 @@ export default function History({
           onChange={(event) => {
             const [file] = Array.from(event.target.files ?? []);
 
-            if (file) importChat(file);
+            if (file) importFile(file);
 
             // Cleared so the same file can be picked again, which is otherwise
             // not a change and fires nothing.
@@ -300,8 +303,17 @@ export default function History({
 
         <button
           className={sidebarHeadingAction}
-          title="Import chat"
-          aria-label="Import chat"
+          title="Export everything"
+          aria-label="Export everything"
+          onClick={exportEverything}
+        >
+          <HardDriveDownload className="h-4 w-4" />
+        </button>
+
+        <button
+          className={sidebarHeadingAction}
+          title="Import a chat or a backup"
+          aria-label="Import a chat or a backup"
           onClick={() => fileInputRef.current?.click()}
         >
           <Upload className="h-4 w-4" />

@@ -16,7 +16,7 @@ import {
 interface PromptSidebarProps {
   prompts: Prompt[];
   addPrompt: (title: string, content: string) => Promise<void>;
-  updatePrompt: (id: number, title: string, content: string) => Promise<void>;
+  updatePrompt: (id: string, title: string, content: string) => Promise<void>;
   removePrompt: (prompt: Prompt) => void;
   choosePrompt: (prompt: Prompt) => void;
 }
@@ -51,7 +51,7 @@ export default function PromptSidebar({
 
   const handleAddOrUpdatePrompt = () => {
     if (editingPrompt) {
-      updatePrompt(editingPrompt.id!, title.trim(), content.trim());
+      updatePrompt(editingPrompt.id, title.trim(), content.trim());
     } else {
       addPrompt(title.trim(), content.trim());
     }

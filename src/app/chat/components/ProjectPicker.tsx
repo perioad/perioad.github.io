@@ -6,7 +6,7 @@ interface ProjectPickerProps {
   isOpen: boolean;
   chat: HistoryRecord;
   projects: Project[];
-  onPick: (chatId: number, projectId: number | null) => Promise<void>;
+  onPick: (chatId: string, projectId: string | null) => Promise<void>;
   onClose: () => void;
 }
 
@@ -27,10 +27,7 @@ export default function ProjectPicker({
       <ul className="flex flex-col gap-1">
         {projects.map((project) => (
           <li key={project.id}>
-            <button
-              className={row}
-              onClick={() => onPick(chat.id, project.id!)}
-            >
+            <button className={row} onClick={() => onPick(chat.id, project.id)}>
               <Folder className="h-4 w-4 shrink-0" />
 
               <span className="grow overflow-hidden text-ellipsis whitespace-nowrap">

@@ -20,12 +20,13 @@ import {
   getPromptsDB,
   getPromptTransaction,
 } from '../utils/db';
+import { mergeHistoryRecords, mergeProjects, mergePrompts } from '../utils/db';
 import { HistoryRecord } from '../models/db';
 import { Attachment, Citation, Message } from '../models/chat';
-import { parseChatFile } from '../utils/chatFile';
+import { downloadBackup, parseUpload } from '../utils/chatFile';
 import { ResponsesModel } from 'openai/resources/index.mjs';
 import PromptSidebar from './PromptSidebar';
-import { Project, Prompt } from '../models/db';
+import { Project, ProjectDraft, Prompt } from '../models/db';
 import ModelSelect from './ModelSelect';
 import MobileDrawer from './MobileDrawer';
 import ConfirmDialog from './ConfirmDialog';
@@ -71,13 +72,12 @@ function getInstructionsFromLocalStorage(): string {
 
 // Where the visitor was when they last closed the tab. Only a note of it: the
 // chat may have been removed since, so what is read here is checked against the
-// history before it is opened.
-function getSavedChatId(): number {
-  if (typeof window === 'undefined') return 1;
+// history before it is opened. A first visit has nothing saved and gets a
+// fresh id, which is all a new empty chat is.
+function getSavedChatId(): string {
+  if (typeof window === 'undefined') return '';
 
-  const saved = Number(localStorage.getItem('currentChatId'));
-
-  return Number.isInteger(saved) && saved > 0 ? saved : 1;
+  return localStorage.getItem('currentChatId') || crypto.randomUUID();
 }
 
 // A rail left open in a desktop session would come back as a drawer sitting on
@@ -95,7 +95,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
   const measureHeader = useMeasuredHeight('--header-height');
   const measureComposer = useMeasuredHeight('--composer-height');
   const [history, setHistory] = useState<HistoryRecord[]>([]);
-  const [currentChatId, setCurrentChatId] = useState<number>(getSavedChatId);
+  const [currentChatId, setCurrentChatId] = useState<string>(getSavedChatId);
   const [isHistoryVisible, setIsHistoryVisible] = useState(() =>
     getSavedPanelState('isHistoryVisible'),
   );
@@ -135,7 +135,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
   const [projectEditorVisit, setProjectEditorVisit] = useState(0);
   // Where the next chat will be filed. A chat has no record until its first
   // message, so until then the project it was started from lives here.
-  const [pendingProjectId, setPendingProjectId] = useState<number | null>(null);
+  const [pendingProjectId, setPendingProjectId] = useState<string | null>(null);
 
   // A dialog is still on screen for as long as it takes to fade, by which point
   // the state that opened it has been cleared. These keep it saying the name it
@@ -150,7 +150,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
   // starts owing nothing: a question left hanging by a stop, a reload or a
   // closed tab stays hanging until it is asked again, rather than firing off a
   // request nobody is waiting for the moment the chat is opened.
-  const [replyRequestedFor, setReplyRequestedFor] = useState<number | null>(
+  const [replyRequestedFor, setReplyRequestedFor] = useState<string | null>(
     null,
   );
 
@@ -199,7 +199,12 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
         savedHistory.at(0);
 
       setHistory(savedHistory);
-      setCurrentChatId(current?.id ?? 1);
+
+      // With no record to open, the id already in hand stays: it names the
+      // empty chat the first message will become.
+      if (current) {
+        setCurrentChatId(current.id);
+      }
 
       if (current?.model) {
         setModel(current.model);
@@ -243,6 +248,8 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
       id: currentChatId,
       title: saved?.title ?? 'New chat',
       messages: updatedMessages,
+      createdAt: saved?.createdAt ?? Date.now(),
+      updatedAt: Date.now(),
       // Written on every save rather than only the first, so it is the model
       // the chat was last held with and not the one it opened on.
       model,
@@ -263,12 +270,12 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
 
   // Writes the title alone, leaving whatever messages are in the record. The
   // reply is usually still streaming into it by the time this runs.
-  const renameChat = async (id: number, title: string) => {
+  const renameChat = async (id: string, title: string) => {
     const tx = await getHistoryTransaction();
     const saved = await tx.store.get(id);
 
     if (saved) {
-      await tx.store.put({ ...saved, title });
+      await tx.store.put({ ...saved, title, updatedAt: Date.now() });
     }
 
     await tx.done;
@@ -284,7 +291,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
       const saved = await tx.store.get(currentChatId);
 
       if (saved) {
-        await tx.store.put({ ...saved, usedTokens });
+        await tx.store.put({ ...saved, usedTokens, updatedAt: Date.now() });
       }
 
       await tx.done;
@@ -296,7 +303,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
 
   // Named after the message is saved, not before it. Waiting on the title used
   // to hold up the first message of every chat behind a whole round trip.
-  const nameChat = async (id: number, content: string) => {
+  const nameChat = async (id: string, content: string) => {
     try {
       const title = await getAiTitle(content);
 
@@ -404,11 +411,10 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     }
   }
 
-  const startNewChat = async (projectId: number | null = null) => {
-    const allHistory = await getHistoryDB();
-    const newChatId = allHistory.length > 0 ? allHistory.at(0)!.id + 1 : 1;
-
-    setCurrentChatId(newChatId);
+  const startNewChat = (projectId: string | null = null) => {
+    // Made up on the spot rather than counted out from the history, which is
+    // the whole point of uuids: nothing needs consulting first.
+    setCurrentChatId(crypto.randomUUID());
     setPendingProjectId(projectId);
     closeDrawers();
 
@@ -417,28 +423,36 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     }
   };
 
-  // Given a new id rather than the one it left with, which by now belongs to
-  // something else, and filed loose: the project it was in was a folder in
-  // whichever browser it came from.
-  const importChat = async (file: File) => {
+  // Takes back a single exported chat or a whole backup, and folds either in
+  // rather than copying it in: records arrive under the ids they left with,
+  // so a chat this browser already has is updated if the file's copy is newer
+  // and left alone if its own is.
+  const importFile = async (file: File) => {
     try {
-      const { title, messages: imported } = parseChatFile(await file.text());
-      const allHistory = await getHistoryDB();
-      const id = allHistory.length > 0 ? allHistory.at(0)!.id + 1 : 1;
-      const tx = await getHistoryTransaction();
+      const upload = parseUpload(await file.text());
 
-      await Promise.all([
-        tx.store.put({ id, title, messages: imported }),
-        tx.done,
-      ]);
+      if (upload.kind === 'chat') {
+        await mergeHistoryRecords([upload.chat]);
 
-      setHistory(await getHistoryDB());
-      setCurrentChatId(id);
-      setPendingProjectId(null);
+        setHistory(await getHistoryDB());
+        setCurrentChatId(upload.chat.id);
+        setPendingProjectId(null);
+      } else {
+        // Projects before chats, so nothing ever points at a folder that has
+        // not arrived yet.
+        await mergeProjects(upload.projects);
+        await mergePrompts(upload.prompts);
+        await mergeHistoryRecords(upload.chats);
+
+        setProjects(await getProjectsDB());
+        setPrompts(await getPromptsDB());
+        setHistory(await getHistoryDB());
+      }
+
       closeDrawers();
     } catch (error) {
-      console.error('Error importing the chat:', error);
-      alert('that file is not a chat exported from here.');
+      console.error('Error importing the file:', error);
+      alert('that file is not a chat or a backup exported from here.');
     }
   };
 
@@ -446,17 +460,31 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     if (!chatPendingRemoval) return;
 
     const tx = await getHistoryTransaction();
+    const saved = await tx.store.get(chatPendingRemoval.id);
 
-    await Promise.all([tx.store.delete(chatPendingRemoval.id), tx.done]);
+    if (saved) {
+      // A tombstone rather than a gap, so a copy of this chat living anywhere
+      // else can one day be told it was removed rather than offered back. The
+      // conversation itself goes now: a removed chat should not keep sitting
+      // on disk in full just because its name has to.
+      await tx.store.put({
+        ...saved,
+        messages: [],
+        updatedAt: Date.now(),
+        deletedAt: Date.now(),
+      });
+    }
+
+    await tx.done;
 
     const updatedHistory = await getHistoryDB();
 
     setHistory(updatedHistory);
-    setCurrentChatId(updatedHistory.at(0)?.id ?? 1);
+    setCurrentChatId(updatedHistory.at(0)?.id ?? crypto.randomUUID());
     setChatPendingRemoval(null);
   };
 
-  const selectChat = (id: number) => {
+  const selectChat = (id: string) => {
     const chat = history.find((saved) => saved.id === id);
 
     setCurrentChatId(id);
@@ -481,7 +509,14 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
   };
 
   const addPrompt = async (title: string, content: string) => {
-    const newPrompt: Prompt = { title, content };
+    const now = Date.now();
+    const newPrompt: Prompt = {
+      id: crypto.randomUUID(),
+      title,
+      content,
+      createdAt: now,
+      updatedAt: now,
+    };
     const tx = await getPromptTransaction();
 
     await Promise.all([tx.store.add(newPrompt), tx.done]);
@@ -491,13 +526,18 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     setPrompts(updatedPrompts);
   };
 
-  const updatePrompt = async (id: number, title: string, content: string) => {
+  const updatePrompt = async (id: string, title: string, content: string) => {
     const tx = await getPromptTransaction();
     const existingPrompt = await tx.store.get(id);
 
     if (existingPrompt) {
       await Promise.all([
-        tx.store.put({ ...existingPrompt, title, content }),
+        tx.store.put({
+          ...existingPrompt,
+          title,
+          content,
+          updatedAt: Date.now(),
+        }),
         tx.done,
       ]);
 
@@ -510,8 +550,18 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     if (!promptPendingRemoval) return;
 
     const tx = await getPromptTransaction();
+    const saved = await tx.store.get(promptPendingRemoval.id);
 
-    await Promise.all([tx.store.delete(promptPendingRemoval.id!), tx.done]);
+    if (saved) {
+      await tx.store.put({
+        ...saved,
+        content: '',
+        updatedAt: Date.now(),
+        deletedAt: Date.now(),
+      });
+    }
+
+    await tx.done;
 
     const updatedPrompts = await getPromptsDB();
 
@@ -524,18 +574,26 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     closeDrawers();
   }
 
-  const saveProject = async (project: Project) => {
+  const saveProject = async (draft: ProjectDraft) => {
     const tx = await getProjectTransaction();
+    const now = Date.now();
+    const saved = draft.id ? await tx.store.get(draft.id) : undefined;
 
-    if (project.id) {
-      await tx.store.put(project);
+    if (saved) {
+      await tx.store.put({
+        ...saved,
+        title: draft.title,
+        instructions: draft.instructions,
+        updatedAt: now,
+      });
     } else {
-      // Added without the key so the store assigns one, the way prompts are.
-      const newProject = { ...project };
-
-      delete newProject.id;
-
-      await tx.store.add(newProject);
+      await tx.store.add({
+        id: crypto.randomUUID(),
+        title: draft.title,
+        instructions: draft.instructions,
+        createdAt: now,
+        updatedAt: now,
+      });
     }
 
     await tx.done;
@@ -548,8 +606,18 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     if (!projectPendingRemoval) return;
 
     const tx = await getProjectTransaction();
+    const saved = await tx.store.get(projectPendingRemoval.id);
 
-    await Promise.all([tx.store.delete(projectPendingRemoval.id!), tx.done]);
+    if (saved) {
+      await tx.store.put({
+        ...saved,
+        instructions: '',
+        updatedAt: Date.now(),
+        deletedAt: Date.now(),
+      });
+    }
+
+    await tx.done;
 
     // The chats outlive the folder they were in. They are the conversations
     // themselves, and removing the thing that grouped them is not a reason to
@@ -561,7 +629,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
 
     await Promise.all(
       filed.map((chat) => {
-        const unfiled = { ...chat };
+        const unfiled = { ...chat, updatedAt: Date.now() };
 
         delete unfiled.projectId;
 
@@ -579,12 +647,12 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
     closeProjectEditor();
   };
 
-  const moveChat = async (chatId: number, projectId: number | null) => {
+  const moveChat = async (chatId: string, projectId: string | null) => {
     const tx = await getHistoryTransaction();
     const saved = await tx.store.get(chatId);
 
     if (saved) {
-      const moved: HistoryRecord = { ...saved };
+      const moved: HistoryRecord = { ...saved, updatedAt: Date.now() };
 
       if (projectId) {
         moved.projectId = projectId;
@@ -631,7 +699,7 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
   // Written from here rather than from each of the four places that open a
   // chat, so none of them can be added later without it.
   useEffect(() => {
-    localStorage.setItem('currentChatId', currentChatId.toString());
+    localStorage.setItem('currentChatId', currentChatId);
   }, [currentChatId]);
 
   useEffect(() => {
@@ -664,7 +732,8 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
       createProject={() => editProject(null)}
       editProject={editProject}
       startProjectChat={startNewChat}
-      importChat={importChat}
+      importFile={importFile}
+      exportEverything={() => downloadBackup(history, prompts, projects)}
     />
   );
 

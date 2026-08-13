@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import Modal, { modalField } from '../../components/Modal';
-import { Project } from '../models/db';
+import { Project, ProjectDraft } from '../models/db';
 
 interface ProjectSettingsProps {
   isOpen: boolean;
   project: Project | null;
   onClose: () => void;
-  onSave: (project: Project) => Promise<void>;
+  onSave: (draft: ProjectDraft) => Promise<void>;
   onRemove: (project: Project) => void;
 }
 
