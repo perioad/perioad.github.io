@@ -767,15 +767,23 @@ export default function Chat({ openKeyModal }: { openKeyModal: () => void }) {
             editMessage={editMessage}
             dropMessagesFrom={dropMessagesFrom}
             recordUsage={recordUsage}
+            isReplyRequested={replyRequestedFor === currentChatId}
+            requestReply={() => setReplyRequestedFor(currentChatId)}
             model={model}
             thinkingLevel={thinkingLevel}
             togglePin={togglePin}
             instructions={instructions}
           />
 
+          {/* Nothing of its own around the composer: the panel inside is the
+              only surface down here, and the conversation runs clear to the
+              edge of the screen behind everything else. Clear also leaves the
+              panel free to frost what is under it, which it could not do while
+              this blurred: an ancestor filtering its backdrop leaves a child
+              with nothing left to filter. */}
           <div
             ref={measureComposer}
-            className="absolute inset-x-0 bottom-0 z-10 bg-white/25 backdrop-blur-xs dark:bg-black/20"
+            className="absolute inset-x-0 bottom-0 z-10"
           >
             <ChatInput ref={chatInputRef} addNewMessage={addNewMessage} />
           </div>
