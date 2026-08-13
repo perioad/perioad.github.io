@@ -1,0 +1,18 @@
+<!--
+  The same mark for platforms that crop an icon to a shape of their choosing.
+  Full bleed, since the corners are cut by whoever is drawing it, and the mark
+  is held smaller so that a circular crop takes none of it.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="512" height="512">
+  <rect width="48" height="48" fill="#000000" />
+  <g
+    transform="translate(24 24) scale(0.66) translate(-24 -24)"
+    fill="#000000"
+    stroke="#ffffff"
+    stroke-width="2"
+  >
+    <path d="M23 3 L18 3 L7 6 L7 42 L18 45 L23 45 Z" />
+    <path d="M25 3 L30 3 L41 6 L41 27 L31 29 L31 45 L25 45 Z" />
+    <rect x="31" y="10" width="5" height="11" rx="1" />
+  </g>
+</svg>

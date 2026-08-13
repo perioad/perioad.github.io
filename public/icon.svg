@@ -1,0 +1,26 @@
+<!--
+  The site's own mark, redrawn. The only copy of it in the repository is a 48
+  pixel favicon, which is too small to enlarge and too stepped to trace
+  faithfully, so the shape was measured off that grid and laid down again as
+  straight edges: the same drawing, now at any size. The 48 unit view box is
+  that original grid, so the numbers below are the pixels it was read from.
+
+  Black on black, which is only a shape at all because of the line drawn round
+  it. That is the favicon's own arrangement, where the light edge is what holds
+  the letter together against whatever it is put on.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="512" height="512">
+  <rect width="48" height="48" rx="10.5" fill="#000000" />
+  <!-- Held at 70% so the mark keeps a margin on a home screen, scaled about
+       the middle of the drawing, which is also the middle of the grid. -->
+  <g
+    transform="translate(24 24) scale(0.8) translate(-24 -24)"
+    fill="#000000"
+    stroke="#ffffff"
+    stroke-width="2"
+  >
+    <path d="M23 3 L18 3 L7 6 L7 42 L18 45 L23 45 Z" />
+    <path d="M25 3 L30 3 L41 6 L41 27 L31 29 L31 45 L25 45 Z" />
+    <rect x="31" y="10" width="5" height="11" rx="1" />
+  </g>
+</svg>
