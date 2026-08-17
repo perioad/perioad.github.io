@@ -50,10 +50,6 @@ const marked = new Marked(
 const actionButton =
   'flex h-9 items-center rounded-md px-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-inherit dark:text-slate-400 dark:hover:bg-slate-800';
 
-// There is no hover on a touch screen, so below `sm` the actions stay put.
-const revealOnHover =
-  'sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100';
-
 const highlighted = 'bg-slate-100 dark:bg-slate-800';
 
 const floatingButton =
@@ -268,7 +264,7 @@ export default function Messages({
   const messageActions = (message: Message, index: number) => (
     <div className="mt-1 flex">
       <button
-        className={`${actionButton} ${revealOnHover}`}
+        className={actionButton}
         onClick={() => copyMessage(message.content, index)}
         title="Copy message"
         aria-label="Copy message"
@@ -281,9 +277,9 @@ export default function Messages({
       </button>
 
       <button
-        // A pinned message keeps its button on show, because the button is also
-        // the only marker in the conversation that it is pinned.
-        className={`${actionButton} ${message.isPinned ? 'text-sky-500' : revealOnHover}`}
+        // The pinned button is also the only marker in the conversation that
+        // the message is pinned, hence the accent colour.
+        className={`${actionButton} ${message.isPinned ? 'text-sky-500' : ''}`}
         onClick={() => togglePin(index)}
         title={message.isPinned ? 'Unpin message' : 'Pin message'}
         aria-label={message.isPinned ? 'Unpin message' : 'Pin message'}
@@ -298,7 +294,7 @@ export default function Messages({
 
       {message.role === 'user' && (
         <button
-          className={`${actionButton} ${revealOnHover}`}
+          className={actionButton}
           onClick={() => startEditing(index, message.content)}
           title="Edit message"
           aria-label="Edit message"
@@ -310,7 +306,7 @@ export default function Messages({
       {message.role === 'assistant' && (
         <>
           <button
-            className={`${actionButton} ${readAloud.speakingIndex === index ? 'text-sky-500' : revealOnHover}`}
+            className={`${actionButton} ${readAloud.speakingIndex === index ? 'text-sky-500' : ''}`}
             onClick={() => readAloud.toggle(index, message.content)}
             title={
               readAloud.speakingIndex === index ? 'Pause reading' : 'Read aloud'
@@ -331,7 +327,7 @@ export default function Messages({
           </button>
 
           <button
-            className={`${actionButton} ${revealOnHover}`}
+            className={actionButton}
             onClick={() => regenerate(index)}
             title="Regenerate reply"
             aria-label="Regenerate reply"
@@ -378,7 +374,7 @@ export default function Messages({
               {message.role === 'user' && (
                 <div
                   data-message={i}
-                  className={`${highlightedIndex === i ? highlighted : ''} group mb-5 flex w-full flex-col items-end border-r-2 border-sky-500 px-3 leading-6 transition-colors last:mb-0 sm:px-5`}
+                  className={`${highlightedIndex === i ? highlighted : ''} mb-5 flex w-full flex-col items-end border-r-2 border-sky-500 px-3 leading-6 transition-colors last:mb-0 sm:px-5`}
                 >
                   {message.attachments && (
                     <div className="mb-2">
@@ -440,7 +436,7 @@ export default function Messages({
               {message.role === 'assistant' && (
                 <div
                   data-message={i}
-                  className={`${highlightedIndex === i ? highlighted : ''} group mb-5 w-full border-l-2 border-green-500 px-3 leading-6 transition-colors last:mb-0 sm:px-5`}
+                  className={`${highlightedIndex === i ? highlighted : ''} mb-5 w-full border-l-2 border-green-500 px-3 leading-6 transition-colors last:mb-0 sm:px-5`}
                 >
                   <div
                     className="markdown wrap-break-word"
