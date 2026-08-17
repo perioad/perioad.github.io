@@ -359,7 +359,7 @@ export default function Messages({
         className="scrollbar-hidden grow overflow-y-auto overscroll-contain pt-[calc(var(--header-height,3.25rem)+var(--pinned-bar-height,0px)+1.25rem)] pb-[calc(var(--composer-height,5rem)+1.25rem)]"
         onClick={handleCopyCode}
       >
-        <div className="mx-auto w-full max-w-3xl text-base sm:text-sm">
+        <div className="mx-auto w-full max-w-4xl text-base sm:text-sm">
           {messages.length === 0 && (
             <div className="px-3 py-10 text-center sm:px-5">
               <p className="mb-1 text-xl">what shall we get into?</p>
